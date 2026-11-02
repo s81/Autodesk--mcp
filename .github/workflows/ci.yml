@@ -1,0 +1,99 @@
+name: CI
+
+# Runs on every pull request and on pushes to main:
+#   - tests on Linux and Windows (Windows is the real target OS for the named-pipe bridge)
+#   - compiles all six add-in variants (Revit/AutoCAD x 2025/2026/2027) with warnings as errors
+#   - checks that the self-contained win-x64 server still publishes
+# "CI result" aggregates everything into one check, suitable as a required status check.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Run tests
+        run: dotnet test --project tests/AutodeskMcp.Tests -c Release
+
+  build-addins:
+    name: Build ${{ matrix.product }} ${{ matrix.year }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        product: [Revit, AutoCAD]
+        year: ['2025', '2026', '2027']
+    env:
+      PRODUCT: ${{ matrix.product }}
+      YEAR: ${{ matrix.year }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Build add-in
+        run: >
+          dotnet build "src/AutodeskMcp.$PRODUCT" -c Release
+          "-p:${PRODUCT}Version=$YEAR" -p:TreatWarningsAsErrors=true
+
+  publish-server:
+    name: Publish server (win-x64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish self-contained single file
+        run: >
+          dotnet publish src/AutodeskMcp.Server -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:TreatWarningsAsErrors=true -o out/server
+      - name: Check output
+        run: test -s out/server/AutodeskMcp.Server.exe && ls -la out/server
+
+  result:
+    name: CI result
+    if: always()
+    needs: [test, build-addins, publish-server]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All jobs must succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            [[ "$r" == "success" ]] || { echo "::error::A CI job did not succeed ($r)"; exit 1; }
+          done
