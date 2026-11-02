@@ -95,6 +95,25 @@ dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2027
 dotnet test --project tests/AutodeskMcp.Tests
 ```
 
+## Release
+
+`.github/workflows/release.yml` runs the tests, builds every version, and publishes a GitHub release with
+the per-version zips and `SHA256SUMS.txt`:
+
+```bash
+git tag v0.1.0
+```
+
+```bash
+git push origin v0.1.0
+```
+
+* The tag must match `<Version>` in `Directory.Build.props`, otherwise the workflow fails. Bump that
+  version first for a new release.
+* A tag with a suffix (`v0.2.0-beta.1`) becomes a pre-release.
+* You can also start it manually: Actions → Release → Run workflow. There you can choose pre-release
+  and draft.
+
 ## Install (Windows, per user, no admin rights)
 
 ```powershell
