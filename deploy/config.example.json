@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "allowModifications": true,
+  "allowCodeExecution": true,
+  "mainThreadTimeoutSeconds": 120
+}

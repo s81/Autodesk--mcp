@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The MCP server is a separate process launched by the MCP client (Claude Desktop, Claude Code, ...)
+    over stdio. It never loads Revit/AutoCAD assemblies at runtime; it only reads their metadata to
+    compile execute_csharp scripts.
+
+    Recommended distribution (no .NET install needed on the user's machine):
+      dotnet publish src/AutodeskMcp.Server -c Release -r win-x64 (see scripts/build.ps1)
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AutodeskMcp.Server</RootNamespace>
+    <AssemblyName>AutodeskMcp.Server</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutodeskMcp.Bridge\AutodeskMcp.Bridge.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AutodeskMcp.Tests" />
+  </ItemGroup>
+</Project>

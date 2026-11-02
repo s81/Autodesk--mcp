@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Host-independent tests: they run on Windows, Linux or macOS without Revit/AutoCAD by standing up a
+    fake host (BridgeHost + an inline dispatcher) and driving it through the real pipe client and the
+    real MCP server process.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AutodeskMcp.Bridge\AutodeskMcp.Bridge.csproj" />
+    <ProjectReference Include="..\..\src\AutodeskMcp.Server\AutodeskMcp.Server.csproj" />
+  </ItemGroup>
+</Project>

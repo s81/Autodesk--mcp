@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-user install (works for Revit 2025, 2026, 2027):
+    %APPDATA%\Autodesk\Revit\Addins\<year>\AutodeskMcp.addin
+    %APPDATA%\Autodesk\Revit\Addins\<year>\AutodeskMcp\AutodeskMcp.Revit.dll  (+ AutodeskMcp.Bridge.dll)
+  Note: Revit 2027 no longer reads machine-wide add-ins from C:\ProgramData; use the per-user folder
+  or C:\Program Files\Autodesk\Revit\Addins\2027.
+-->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Autodesk MCP Bridge</Name>
+    <Assembly>AutodeskMcp\AutodeskMcp.Revit.dll</Assembly>
+    <FullClassName>AutodeskMcp.Revit.BridgeApplication</FullClassName>
+    <ClientId>6F3C2B9E-4D1A-4C8E-9B57-2A61E0D4F8C3</ClientId>
+    <VendorId>AMCP</VendorId>
+    <VendorDescription>Autodesk MCP Bridge - exposes Revit to Model Context Protocol clients</VendorDescription>
+  </AddIn>
+</RevitAddIns>
