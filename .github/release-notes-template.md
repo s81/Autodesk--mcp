@@ -1,7 +1,5 @@
 Autodesk MCP Bridge: an MCP server plus add-ins that let MCP clients (Claude Desktop, Claude Code, …) read and edit live **Revit** and **AutoCAD** 2025–2027 sessions on the same Windows PC.
 
-> ⚠️ Verify each Revit/AutoCAD year you deploy on a copy of a project first (see "Status" in the README).
-
 ## Downloads
 
 | File | What it is | Extract to |
