@@ -95,6 +95,16 @@ dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2027
 dotnet test --project tests/AutodeskMcp.Tests
 ```
 
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and on every push to `main`:
+* tests on Linux and Windows;
+* builds all six add-ins (Revit and AutoCAD × 2025, 2026, 2027) with warnings treated as errors;
+* checks that the self-contained Windows server still publishes.
+
+To block merging when CI fails, make the single **CI result** check required (Settings → Branches →
+branch protection for `main`).
+
 ## Release
 
 `.github/workflows/release.yml` runs the tests, builds every version, and publishes a GitHub release with
