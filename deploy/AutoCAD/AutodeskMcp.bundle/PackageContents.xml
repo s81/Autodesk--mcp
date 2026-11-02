@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AutoCAD autoloader bundle. Install the whole AutodeskMcp.bundle folder to the per-user plug-in folder:
+    %APPDATA%\Autodesk\ApplicationPlugins\AutodeskMcp.bundle
+  (or machine-wide: C:\Program Files\Autodesk\ApplicationPlugins\AutodeskMcp.bundle).
+  One bundle serves AutoCAD 2025 (R25.0), 2026 (R25.1) and 2027 (R26.0), including verticals (Platform="AutoCAD*").
+-->
+<ApplicationPackage
+    SchemaVersion="1.0"
+    AutodeskProduct="AutoCAD"
+    ProductType="Application"
+    Name="Autodesk MCP Bridge"
+    AppVersion="0.1.0"
+    Description="Exposes AutoCAD to Model Context Protocol (MCP) clients over a local, per-user named pipe."
+    Author="Autodesk MCP Bridge"
+    ProductCode="{9D2E5B41-7C3A-4F6E-A1D8-3B5C7E9F0A12}"
+    UpgradeCode="{1A7F3C82-5E4B-4D9A-B6C1-8E2D4F6A9B30}">
+
+  <CompanyDetails Name="Autodesk MCP Bridge" />
+  <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0" SeriesMax="R26.0" />
+
+  <Components Description="AutoCAD 2025">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0" SeriesMax="R25.0" />
+    <ComponentEntry AppName="AutodeskMcp" Version="0.1.0" ModuleName="./Contents/2025/AutodeskMcp.AutoCAD.dll"
+                    AppDescription="Autodesk MCP Bridge" LoadOnAutoCADStartup="True" />
+  </Components>
+
+  <Components Description="AutoCAD 2026">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.1" SeriesMax="R25.1" />
+    <ComponentEntry AppName="AutodeskMcp" Version="0.1.0" ModuleName="./Contents/2026/AutodeskMcp.AutoCAD.dll"
+                    AppDescription="Autodesk MCP Bridge" LoadOnAutoCADStartup="True" />
+  </Components>
+
+  <Components Description="AutoCAD 2027">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R26.0" SeriesMax="R26.0" />
+    <ComponentEntry AppName="AutodeskMcp" Version="0.1.0" ModuleName="./Contents/2027/AutodeskMcp.AutoCAD.dll"
+                    AppDescription="Autodesk MCP Bridge" LoadOnAutoCADStartup="True" />
+  </Components>
+</ApplicationPackage>

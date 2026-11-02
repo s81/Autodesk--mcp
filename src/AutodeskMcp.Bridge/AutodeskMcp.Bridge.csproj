@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Shared between the MCP server (net10.0) and the host add-ins
+    (net8.0-windows for 2025/2026, net10.0-windows for 2027).
+    It must stay dependency-free: it is loaded inside Revit/AutoCAD.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>AutodeskMcp.Bridge</RootNamespace>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,31 @@
+<Project>
+  <!--
+    Shared build settings.
+
+    Host add-ins are built once per product year. Select the year with
+      dotnet build src/AutodeskMcp.Revit   -p:RevitVersion=2025|2026|2027
+      dotnet build src/AutodeskMcp.AutoCAD -p:AutoCADVersion=2025|2026|2027
+    Each year gets its own obj/ and bin/ folder so the builds never collide.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Version>0.1.0</Version>
+    <Product>Autodesk MCP Bridge</Product>
+    <Deterministic>true</Deterministic>
+    <!-- Per-year obj folders live side by side; never compile one year's generated files into another. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'AutodeskMcp.Revit'">
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2027</RevitVersion>
+    <BaseIntermediateOutputPath>obj\Revit$(RevitVersion)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'AutodeskMcp.AutoCAD'">
+    <AutoCADVersion Condition="'$(AutoCADVersion)' == ''">2027</AutoCADVersion>
+    <BaseIntermediateOutputPath>obj\AutoCAD$(AutoCADVersion)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

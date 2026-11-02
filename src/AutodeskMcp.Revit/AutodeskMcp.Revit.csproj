@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Build one Revit year at a time:
+      dotnet build src/AutodeskMcp.Revit -c Release -p:RevitVersion=2025   (net8.0-windows)
+      dotnet build src/AutodeskMcp.Revit -c Release -p:RevitVersion=2026   (net8.0-windows)
+      dotnet build src/AutodeskMcp.Revit -c Release -p:RevitVersion=2027   (net10.0-windows)
+    RevitVersion defaults to 2027 (see Directory.Build.props).
+  -->
+  <PropertyGroup>
+    <TargetFramework Condition="'$(RevitVersion)' == '2027'">net10.0-windows</TargetFramework>
+    <TargetFramework Condition="'$(RevitVersion)' != '2027'">net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>AutodeskMcp.Revit</AssemblyName>
+    <RootNamespace>AutodeskMcp.Revit</RootNamespace>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin\$(Configuration)\Revit$(RevitVersion)\</OutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RevitApiPackageVersion Condition="'$(RevitVersion)' == '2025'">2025.4.60</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitVersion)' == '2026'">2026.4.10</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitVersion)' == '2027'">2027.3.0</RevitApiPackageVersion>
+  </PropertyGroup>
+
+  <Target Name="ValidateRevitVersion" BeforeTargets="CollectPackageReferences;Build">
+    <Error Condition="'$(RevitApiPackageVersion)' == ''" Text="Unsupported RevitVersion '$(RevitVersion)'. Use 2025, 2026 or 2027." />
+  </Target>
+
+  <ItemGroup>
+    <!-- Reference-only packages: Revit supplies the real assemblies at runtime, never copy them. -->
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitApiPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitApiPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutodeskMcp.Bridge\AutodeskMcp.Bridge.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\deploy\Revit\AutodeskMcp.addin" Link="AutodeskMcp.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
