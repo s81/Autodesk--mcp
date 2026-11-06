@@ -12,7 +12,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Product>Autodesk MCP Bridge</Product>
     <Deterministic>true</Deterministic>
     <!-- Per-year obj folders live side by side; never compile one year's generated files into another. -->
