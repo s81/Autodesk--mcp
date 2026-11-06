@@ -12,7 +12,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <Copyright>Copyright (c) 2026 Samer William Khalaf</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Product>Autodesk MCP Bridge</Product>
