@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Concurrent;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using AutodeskMcp.Bridge;

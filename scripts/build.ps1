@@ -3,7 +3,7 @@
   Builds the MCP server and every Revit/AutoCAD add-in variant and stages them under artifacts\.
 
 .DESCRIPTION
-  Requires the .NET 10 SDK (it also builds the net8.0 add-ins for 2025/2026).
+  Requires the .NET 10 SDK. It builds every target: net48 (2022-2024), net8.0 (2025/2026), net10.0 (2027).
   Output layout:
     artifacts\server\AutodeskMcp.Server.exe                     (self-contained, win-x64)
     artifacts\revit\<year>\AutodeskMcp.addin
@@ -12,12 +12,12 @@
     artifacts\autocad\AutodeskMcp.bundle\Contents\<year>\AutodeskMcp.AutoCAD.dll
 
 .EXAMPLE
-  pwsh scripts/build.ps1
-  pwsh scripts/build.ps1 -Years 2026 -SkipTests
+  powershell -ExecutionPolicy Bypass -File scripts\build.ps1
+  powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -Years 2026 -SkipTests
 #>
 param(
-    [ValidateSet('2025', '2026', '2027')]
-    [string[]] $Years = @('2025', '2026', '2027'),
+    [ValidateSet('2022', '2023', '2024', '2025', '2026', '2027')]
+    [string[]] $Years = @('2022', '2023', '2024', '2025', '2026', '2027'),
     [string] $Configuration = 'Release',
     [switch] $SkipTests
 )
@@ -64,4 +64,4 @@ foreach ($year in $Years) {
 }
 
 Write-Host "`nDone. Artifacts in $artifacts" -ForegroundColor Green
-Write-Host "Install with: pwsh scripts/install.ps1"
+Write-Host "Install with: powershell -ExecutionPolicy Bypass -File scripts\install.ps1"

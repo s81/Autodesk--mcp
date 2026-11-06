@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Host-independent tests: they run on Windows, Linux or macOS without Revit/AutoCAD by standing up a
-    fake host (BridgeHost + an inline dispatcher) and driving it through the real pipe client and the
+    Host-independent tests: they run without Revit/AutoCAD by standing up fake hosts (in-process, and as a
+    separate process via tests/AutodeskMcp.FakeHost) and driving them through the real pipe client and the
     real MCP server process.
+      net10.0 -> everywhere; includes server, cross-process and System.Text.Json compatibility tests.
+      net48   -> Windows only; runs the bridge exactly as the Revit/AutoCAD 2022-2024 add-ins do.
   -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net10.0;net48</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -20,6 +23,20 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AutodeskMcp.Bridge\AutodeskMcp.Bridge.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <ProjectReference Include="..\..\src\AutodeskMcp.Server\AutodeskMcp.Server.csproj" />
+    <!--
+      Built but not referenced: the cross-process tests start it as a separate process. Each runtime is requested
+      explicitly; a plain project reference would only build the one matching this test assembly (net10.0).
+      net48 also compiles on Linux/macOS; the tests that run it are skipped there.
+    -->
+    <ProjectReference Include="..\AutodeskMcp.FakeHost\AutodeskMcp.FakeHost.csproj"
+                      ReferenceOutputAssembly="false" Private="false"
+                      SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net10.0" />
+    <ProjectReference Include="..\AutodeskMcp.FakeHost\AutodeskMcp.FakeHost.csproj"
+                      ReferenceOutputAssembly="false" Private="false"
+                      SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net48" />
   </ItemGroup>
 </Project>

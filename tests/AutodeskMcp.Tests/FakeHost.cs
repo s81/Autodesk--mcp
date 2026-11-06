@@ -1,5 +1,9 @@
 using System.Diagnostics;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using AutodeskMcp.Bridge;
 
 namespace AutodeskMcp.Tests;
@@ -47,7 +51,7 @@ internal sealed class FakeHost : IDisposable
     public FakeHost(string product, BridgeConfig? config = null, IEnumerable<BridgeCommand>? extra = null)
     {
         using var p = Process.GetCurrentProcess();
-        string unique = Guid.NewGuid().ToString("N")[..8];
+        string unique = Guid.NewGuid().ToString("N").Substring(0, 8);
         Info = new InstanceInfo
         {
             InstanceId = $"{product}-2099-{p.Id}-{unique}",

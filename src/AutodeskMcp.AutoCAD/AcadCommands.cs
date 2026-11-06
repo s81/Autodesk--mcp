@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using AutodeskMcp.Bridge;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Colors;
@@ -84,7 +88,7 @@ internal static class AcadCommands
 
     private static ObjectId SpaceId(Database db, Transaction tr, string? space)
     {
-        if (string.IsNullOrWhiteSpace(space) || space.Equals("model", StringComparison.OrdinalIgnoreCase) ||
+        if (space is null || string.IsNullOrWhiteSpace(space) || space.Equals("model", StringComparison.OrdinalIgnoreCase) ||
             space.Equals("modelspace", StringComparison.OrdinalIgnoreCase))
             return SymbolUtilityServices.GetBlockModelSpaceId(db);
 
@@ -186,7 +190,7 @@ internal static class AcadCommands
 
     private static JsonNode ListEntities(JsonObject p)
     {
-        int limit = Math.Clamp(p.Int("limit", 500), 1, 10000);
+        int limit = Compat.Clamp(p.Int("limit", 500), 1, 10000);
         int offset = Math.Max(0, p.Int("offset", 0));
         var types = new HashSet<string>(p.Strings("types"), StringComparer.OrdinalIgnoreCase);
         string? layer = p.Str("layer");

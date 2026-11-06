@@ -3,7 +3,11 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 
 namespace AutodeskMcp.Bridge;
 
@@ -27,8 +31,8 @@ public static class SafeJson
             case string s: return JsonValue.Create(s);
             case bool b: return JsonValue.Create(b);
             case char c: return JsonValue.Create(c.ToString());
-            case double d: return double.IsFinite(d) ? JsonValue.Create(d) : JsonValue.Create(d.ToString());
-            case float f: return float.IsFinite(f) ? JsonValue.Create(f) : JsonValue.Create(f.ToString());
+            case double d: return Compat.IsFinite(d) ? JsonValue.Create(d) : JsonValue.Create(d.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            case float f: return Compat.IsFinite(f) ? JsonValue.Create(f) : JsonValue.Create(f.ToString(System.Globalization.CultureInfo.InvariantCulture));
             case decimal m: return JsonValue.Create(m);
             case int i: return JsonValue.Create(i);
             case long l: return JsonValue.Create(l);
@@ -91,7 +95,7 @@ public static class SafeJson
         // Reflect only over data-shaped types that the script itself defined (anonymous types, records,
         // POCOs from the collectible script assembly). Host API objects are never reflected blindly:
         // their getters can be expensive, throw, or require a transaction.
-        if (IsAnonymous(type) || type.Assembly.IsCollectible || type.Assembly.IsDynamic)
+        if (IsAnonymous(type) || ScriptRunner.IsScriptAssembly(type.Assembly) || type.Assembly.IsDynamic)
         {
             var obj = new JsonObject();
             foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -109,7 +113,7 @@ public static class SafeJson
     }
 
     private static bool IsAnonymous(Type t) =>
-        t.Name.Contains("AnonymousType", StringComparison.Ordinal) &&
+        t.Name.IndexOf("AnonymousType", StringComparison.Ordinal) >= 0 &&
         t.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
 
     private static string SafeToString(object value)

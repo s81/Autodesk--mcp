@@ -1,6 +1,6 @@
 name: Release
 
-# Builds the MCP server and every Revit/AutoCAD add-in (2025-2027), runs the tests, and publishes a
+# Builds the MCP server and every Revit/AutoCAD add-in (2022-2027), runs the tests, and publishes a
 # GitHub release with the per-version zips.
 #
 #   Tag push:  git tag v0.1.0 && git push origin v0.1.0
@@ -53,6 +53,7 @@ jobs:
         with:
           # 10.0 builds everything (incl. the 2027 add-ins and the server); 8.0 supplies the
           # reference packs for the 2025/2026 add-ins without relying on a NuGet download.
+          # The net48 add-ins (2022-2024) use the .NET Framework reference assemblies package.
           dotnet-version: |
             8.0.x
             10.0.x
@@ -105,7 +106,7 @@ jobs:
           fi
           gh release create "$TAG" dist/*.zip dist/SHA256SUMS.txt \
             --target "$GITHUB_SHA" \
-            --title "$TAG — Revit & AutoCAD 2025–2027" \
+            --title "$TAG — Revit & AutoCAD 2022–2027" \
             --notes-file dist/RELEASE_NOTES.md \
             "${flags[@]}"
 

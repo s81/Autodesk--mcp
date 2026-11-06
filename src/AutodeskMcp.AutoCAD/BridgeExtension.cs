@@ -62,9 +62,12 @@ public sealed class BridgeExtension : Autodesk.AutoCAD.Runtime.IExtensionApplica
         _host?.Dispose();
     }
 
-    /// <summary>R25.0 = 2025, R25.1 = 2026, R26.0 = 2027.</summary>
+    /// <summary>R24.1 = 2022, R24.2 = 2023, R24.3 = 2024, R25.0 = 2025, R25.1 = 2026, R26.0 = 2027.</summary>
     internal static string ProductYear(Version v) => (v.Major, v.Minor) switch
     {
+        (24, 1) => "2022",
+        (24, 2) => "2023",
+        (24, 3) => "2024",
         (25, 0) => "2025",
         (25, 1) => "2026",
         (26, 0) => "2027",
@@ -77,7 +80,7 @@ public sealed class BridgeExtension : Autodesk.AutoCAD.Runtime.IExtensionApplica
         {
             string dir = Path.Combine(InstanceRegistry.RootDirectory, "logs");
             Directory.CreateDirectory(dir);
-            File.AppendAllText(Path.Combine(dir, $"autocad-{Environment.ProcessId}.log"),
+            File.AppendAllText(Path.Combine(dir, $"autocad-{Compat.CurrentProcessId}.log"),
                 $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
         }
         catch { /* logging must never throw */ }

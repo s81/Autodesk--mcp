@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 
 namespace AutodeskMcp.Bridge;
 
@@ -52,8 +51,8 @@ public static class InstanceRegistry
         Directory.CreateDirectory(InstancesDirectory);
         string path = Path.Combine(InstancesDirectory, info.InstanceId + ".json");
         string tmp = path + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(info, BridgeJson.Indented));
-        File.Move(tmp, path, overwrite: true);
+        File.WriteAllText(tmp, BridgeJson.Serialize(info, indented: true));
+        Compat.MoveOverwrite(tmp, path);
         return path;
     }
 
@@ -71,7 +70,7 @@ public static class InstanceRegistry
         foreach (string file in Directory.EnumerateFiles(InstancesDirectory, "*.json"))
         {
             InstanceInfo? info = null;
-            try { info = JsonSerializer.Deserialize<InstanceInfo>(File.ReadAllText(file), BridgeJson.Options); }
+            try { info = BridgeJson.Deserialize<InstanceInfo>(File.ReadAllText(file)); }
             catch { /* corrupt or being written */ }
 
             if (info is null) continue;

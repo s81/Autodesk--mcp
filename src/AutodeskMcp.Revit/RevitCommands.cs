@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using AutodeskMcp.Bridge;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -36,7 +40,7 @@ internal static class RevitCommands
 
     private static Document Doc => UiDoc.Document;
 
-    private static ElementId Id(long value) => new(value);
+    private static ElementId Id(long value) => RevitCompat.ToElementId(value);
 
     private static JsonArray Arr(IEnumerable<JsonNode?> items) => new(items.ToArray());
 
@@ -73,7 +77,7 @@ internal static class RevitCommands
             info["activeDocument"] = active.Title;
             info["activeView"] = view is null ? null : new JsonObject
             {
-                ["id"] = view.Id.Value,
+                ["id"] = view.Id.IdValue(),
                 ["name"] = view.Name,
                 ["viewType"] = view.ViewType.ToString(),
             };
@@ -121,7 +125,7 @@ internal static class RevitCommands
     private static JsonNode ListElements(JsonObject p)
     {
         var doc = Doc;
-        int limit = Math.Clamp(p.Int("limit", 200), 1, 5000);
+        int limit = Compat.Clamp(p.Int("limit", 200), 1, 5000);
         int offset = Math.Max(0, p.Int("offset", 0));
 
         var viewId = p.Long("viewId");
@@ -151,7 +155,7 @@ internal static class RevitCommands
         }
 
         if (p.Str("nameContains") is { Length: > 0 } fragment)
-            elements = elements.Where(e => RevitJson.SafeName(e).Contains(fragment, StringComparison.OrdinalIgnoreCase));
+            elements = elements.Where(e => Compat.ContainsIgnoreCase(RevitJson.SafeName(e), fragment));
 
         var all = elements.ToList();
         return new JsonObject
@@ -222,7 +226,7 @@ internal static class RevitCommands
         {
             var o = new JsonObject
             {
-                ["id"] = v.Id.Value,
+                ["id"] = v.Id.IdValue(),
                 ["name"] = v.Name,
                 ["viewType"] = v.ViewType.ToString(),
             };
@@ -240,7 +244,7 @@ internal static class RevitCommands
             .OrderBy(l => l.Elevation)
             .Select(l => (JsonNode?)new JsonObject
             {
-                ["id"] = l.Id.Value,
+                ["id"] = l.Id.IdValue(),
                 ["name"] = l.Name,
                 ["elevationFeet"] = RevitJson.R(l.Elevation),
                 ["elevationDisplay"] = UnitFormatUtils.Format(units, SpecTypeId.Length, l.Elevation, false),
@@ -278,7 +282,7 @@ internal static class RevitCommands
         var body = schedule.GetTableData().GetSectionData(SectionType.Body);
         return new JsonObject
         {
-            ["id"] = schedule.Id.Value,
+            ["id"] = schedule.Id.IdValue(),
             ["name"] = schedule.Name,
             ["header"] = ReadSection(SectionType.Header, 100),
             ["totalBodyRows"] = body?.NumberOfRows ?? 0,
@@ -298,8 +302,8 @@ internal static class RevitCommands
                       (type.LookupParameter(name) is not null ||
                        (Enum.TryParse(name, true, out BuiltInParameter tb) && type.get_Parameter(tb) is not null));
         throw new BridgeException(onType
-            ? $"Parameter '{name}' is a type parameter of element {e.Id.Value}; set it on type id {e.GetTypeId().Value} instead."
-            : $"Element {e.Id.Value} has no parameter '{name}'.");
+            ? $"Parameter '{name}' is a type parameter of element {e.Id.IdValue()}; set it on type id {e.GetTypeId().IdValue()} instead."
+            : $"Element {e.Id.IdValue()} has no parameter '{name}'.");
     }
 
     private static void SetValue(Parameter parameter, string value, bool internalMode)
@@ -314,7 +318,7 @@ internal static class RevitCommands
             case StorageType.ElementId:
                 if (!long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long id))
                     throw new BridgeException($"'{name}' expects an element id.");
-                ok = parameter.Set(new ElementId(id));
+                ok = parameter.Set(RevitCompat.ToElementId(id));
                 break;
             case StorageType.Integer:
                 if (value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase)) ok = parameter.Set(1);
@@ -412,7 +416,7 @@ internal static class RevitCommands
                 if (start.DistanceTo(end) <= tolerance) throw new BridgeException($"walls[{index}] is too short.");
 
                 var wall = Wall.Create(doc, Line.CreateBound(start, end), wallTypeId, level.Id, height, 0, false, structural);
-                created.Add(wall.Id.Value);
+                created.Add(wall.Id.IdValue());
                 index++;
             }
             return new JsonObject { ["createdIds"] = created };
@@ -424,7 +428,7 @@ internal static class RevitCommands
         var doc = Doc;
         var ids = p.ReqLongs("elementIds").Select(Id).ToList();
         foreach (var id in ids)
-            if (doc.GetElement(id) is null) throw new BridgeException($"Element {id.Value} not found.");
+            if (doc.GetElement(id) is null) throw new BridgeException($"Element {id.IdValue()} not found.");
 
         return RevitTransactions.Run(doc, "MCP: Delete elements", () =>
         {
@@ -433,7 +437,7 @@ internal static class RevitCommands
             {
                 ["requested"] = ids.Count,
                 ["deletedCount"] = deleted.Count,
-                ["deletedIds"] = Arr(deleted.Select(d => (JsonNode?)d.Value)),
+                ["deletedIds"] = Arr(deleted.Select(d => (JsonNode?)d.IdValue())),
             };
         });
     }

@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json;
 using System.Text.Json.Nodes;
+#endif
 
 namespace AutodeskMcp.Bridge;
 

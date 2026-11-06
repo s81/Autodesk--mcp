@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -129,19 +130,24 @@ public sealed class ScriptCompiler(HostGateway gateway)
         var list = new List<MetadataReference>();
         foreach (string path in paths)
         {
-            if (!File.Exists(path) || !HasMetadata(path)) continue;
+            if (!File.Exists(path) || !IsAssembly(path)) continue;
             list.Add(MetadataReference.CreateFromFile(path));
         }
         return list;
     }
 
-    private static bool HasMetadata(string path)
+    /// <summary>
+    /// True only for real .NET assemblies. Native DLLs have no metadata, and some files in the .NET Framework
+    /// directory (e.g. System.EnterpriseServices.Wrapper.dll) are modules without an assembly manifest: Roslyn
+    /// rejects those with CS1509 and fails the whole compilation.
+    /// </summary>
+    internal static bool IsAssembly(string path)
     {
         try
         {
             using var fs = File.OpenRead(path);
             using var pe = new PEReader(fs);
-            return pe.HasMetadata;
+            return pe.HasMetadata && pe.GetMetadataReader().IsAssembly;
         }
         catch
         {

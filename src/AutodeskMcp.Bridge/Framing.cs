@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Binary;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -18,10 +17,13 @@ public static class Framing
     public static async Task WriteAsync(Stream stream, string json, CancellationToken ct)
     {
         byte[] payload = Encoding.UTF8.GetBytes(json);
-        byte[] header = new byte[4];
-        BinaryPrimitives.WriteInt32LittleEndian(header, payload.Length);
-        await stream.WriteAsync(header, ct).ConfigureAwait(false);
-        await stream.WriteAsync(payload, ct).ConfigureAwait(false);
+        int length = payload.Length;
+        byte[] header =
+        {
+            (byte)length, (byte)(length >> 8), (byte)(length >> 16), (byte)(length >> 24),
+        };
+        await stream.WriteAsync(header, 0, header.Length, ct).ConfigureAwait(false);
+        await stream.WriteAsync(payload, 0, payload.Length, ct).ConfigureAwait(false);
         await stream.FlushAsync(ct).ConfigureAwait(false);
     }
 
@@ -32,7 +34,7 @@ public static class Framing
         int read = 0;
         while (read < 4)
         {
-            int n = await stream.ReadAsync(header.AsMemory(read), ct).ConfigureAwait(false);
+            int n = await stream.ReadAsync(header, read, 4 - read, ct).ConfigureAwait(false);
             if (n == 0)
             {
                 if (read == 0) return null;
@@ -41,12 +43,12 @@ public static class Framing
             read += n;
         }
 
-        int length = BinaryPrimitives.ReadInt32LittleEndian(header);
+        int length = header[0] | (header[1] << 8) | (header[2] << 16) | (header[3] << 24);
         if (length < 0 || length > MaxMessageBytes)
             throw new InvalidDataException($"Invalid message length {length}.");
 
         byte[] payload = new byte[length];
-        await stream.ReadExactlyAsync(payload, ct).ConfigureAwait(false);
+        await Compat.ReadExactlyAsync(stream, payload, ct).ConfigureAwait(false);
         return Encoding.UTF8.GetString(payload);
     }
 }

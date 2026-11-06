@@ -1,17 +1,20 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using AutodeskMcp.Bridge;
-using AutodeskMcp.Server;
 using Xunit;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
+using System.Text.Json.Nodes;
+using AutodeskMcp.Server;
+#endif
 
 namespace AutodeskMcp.Tests;
 
 internal static class TestEnvironment
 {
-    public static readonly string Home = Path.Combine(Path.GetTempPath(), "amcp-tests-" + Guid.NewGuid().ToString("N")[..8]);
+    public static readonly string Home = Path.Combine(Path.GetTempPath(), "amcp-tests-" + Guid.NewGuid().ToString("N").Substring(0, 8));
 
     [ModuleInitializer]
     internal static void Init() => Environment.SetEnvironmentVariable("AUTODESK_MCP_HOME", Home);
@@ -105,6 +108,51 @@ public sealed class BridgeTests
     }
 
     // ------------------------------------------------------------- scripts
+#if NETFRAMEWORK
+    /// <summary>
+    /// On .NET Framework the test cannot reference the .NET 10 server, so it compiles the script with the
+    /// in-box CodeDom compiler instead. What is under test is the host side: Assembly.Load on .NET Framework,
+    /// invocation, exception unwrapping and MiniJson conversion of the result.
+    /// </summary>
+    private static byte[] CompileWithCodeDom(string body)
+    {
+        string dir = Path.Combine(TestEnvironment.Home, "codedom");
+        Directory.CreateDirectory(dir);
+        string output = Path.Combine(dir, ScriptRunner.AssemblyNamePrefix + Guid.NewGuid().ToString("N") + ".dll");
+        string source = "using System; using System.Linq; using System.Collections.Generic;\n" +
+                        "public static class McpScript { public static object Run(System.Text.StringBuilder output) {\n" +
+                        body + "\n} }";
+        using var provider = new Microsoft.CSharp.CSharpCodeProvider();
+        var options = new System.CodeDom.Compiler.CompilerParameters { OutputAssembly = output, GenerateInMemory = false };
+        options.ReferencedAssemblies.AddRange(new[] { "System.dll", "System.Core.dll" });
+        var results = provider.CompileAssemblyFromSource(options, source);
+        Assert.False(results.Errors.HasErrors, string.Join("\n", results.Errors.Cast<System.CodeDom.Compiler.CompilerError>()));
+        return File.ReadAllBytes(output);
+    }
+
+    [Fact]
+    public async Task Script_runs_in_net48_host()
+    {
+        byte[] asm = CompileWithCodeDom(
+            "output.AppendLine(\"hello from script\"); var squares = Enumerable.Range(1, 4).Select(i => i * i).ToList(); " +
+            "return new { sum = squares.Sum(), squares = squares };");
+        using var host = new FakeHost("revit");
+        var result = await host.Call("execute_script", new JsonObject { ["assembly"] = Convert.ToBase64String(asm) });
+        Assert.Equal(30, result!["result"]!["sum"]!.GetValue<int>());
+        Assert.Equal(4, result["result"]!["squares"]!.AsArray().Count);
+        Assert.Contains("hello from script", result["output"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Script_exception_is_unwrapped_in_net48_host()
+    {
+        byte[] asm = CompileWithCodeDom("var list = new List<int>(); return list[5];");
+        using var host = new FakeHost("revit");
+        var ex = await Assert.ThrowsAsync<BridgeException>(() =>
+            host.Call("execute_script", new JsonObject { ["assembly"] = Convert.ToBase64String(asm) }));
+        Assert.Contains("ArgumentOutOfRangeException", ex.Message);
+    }
+#else
 
     private static readonly IReadOnlyList<Microsoft.CodeAnalysis.MetadataReference> Refs =
         ScriptCompiler.CreateReferences(ScriptRunner.GetReferencePaths());
@@ -152,10 +200,44 @@ public sealed class BridgeTests
     }
 
     [Fact]
+    public void Reference_list_skips_modules_and_native_files()
+    {
+        // .NET Framework hosts report every DLL in the framework directory; some are modules without an
+        // assembly manifest (System.EnterpriseServices.Wrapper.dll) and must not reach the compiler (CS1509).
+        string dir = Path.Combine(TestEnvironment.Home, "refs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string module = Path.Combine(dir, "Module.netmodule.dll");
+        using (var stream = File.Create(module))
+        {
+            var emit = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create("Module",
+                    new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText("public class M {}") }, Refs,
+                    new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.NetModule))
+                .Emit(stream);
+            Assert.True(emit.Success);
+        }
+        string native = Path.Combine(dir, "native.dll");
+        File.WriteAllBytes(native, new byte[] { 0x4D, 0x5A, 0, 0, 1, 2, 3 });
+        string real = typeof(object).Assembly.Location;
+
+        var refs = ScriptCompiler.CreateReferences(new[] { module, native, real });
+        Assert.Single(refs);
+        Assert.False(ScriptCompiler.IsAssembly(module));
+        Assert.True(ScriptCompiler.IsAssembly(real));
+
+        // And a compilation that is handed the full list still succeeds.
+        var compiled = ScriptCompiler.Compile(
+            ScriptCompiler.Wrap(new[] { "System" }, null, "System.Text.StringBuilder output", "", "return 1;"),
+            ScriptCompiler.CreateReferences(ScriptRunner.GetReferencePaths().Append(module).Append(native)));
+        Assert.True(compiled.Success, string.Join("\n", compiled.Errors));
+    }
+
+    [Fact]
     public void Using_directives_cannot_inject_code()
     {
         Assert.ThrowsAny<Exception>(() => ScriptCompiler.WrapRevit("return 1;", new[] { "System; } class X { " }));
     }
+
+#endif
 
     [Fact]
     public void SafeJson_bounds_depth_and_size()
@@ -166,6 +248,7 @@ public sealed class BridgeTests
     }
 
     // ------------------------------------------------------------- MCP server over stdio
+#if !NETFRAMEWORK
 
     [Fact]
     public async Task Mcp_server_lists_tools_and_proxies_a_call_to_the_host()
@@ -239,4 +322,5 @@ public sealed class BridgeTests
             try { proc.Kill(true); } catch { }
         }
     }
+#endif
 }

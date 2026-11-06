@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
     Build one AutoCAD year at a time:
+      dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2022   (R24.1, net48)
+      dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2023   (R24.2, net48)
+      dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2024   (R24.3, net48)
       dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2025   (R25.0, net8.0-windows)
       dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2026   (R25.1, net8.0-windows)
       dotnet build src/AutodeskMcp.AutoCAD -c Release -p:AutoCADVersion=2027   (R26.0, net10.0-windows)
@@ -8,8 +11,9 @@
     Not AutoCAD LT (no .NET API).
   -->
   <PropertyGroup>
+    <TargetFramework Condition="'$(AutoCADVersion)' == '2022' or '$(AutoCADVersion)' == '2023' or '$(AutoCADVersion)' == '2024'">net48</TargetFramework>
+    <TargetFramework Condition="'$(AutoCADVersion)' == '2025' or '$(AutoCADVersion)' == '2026'">net8.0-windows</TargetFramework>
     <TargetFramework Condition="'$(AutoCADVersion)' == '2027'">net10.0-windows</TargetFramework>
-    <TargetFramework Condition="'$(AutoCADVersion)' != '2027'">net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>AutodeskMcp.AutoCAD</AssemblyName>
@@ -26,13 +30,16 @@
       25.0.2 / 25.1.1 were republished targeting net10.0; 25.0.1 / 25.1.0 match the .NET 8 runtime that
       AutoCAD 2025/2026 document. A net8.0 add-in also loads on a .NET 10 host.
     -->
+    <AutoCADApiPackageVersion Condition="'$(AutoCADVersion)' == '2022'">24.1.51000</AutoCADApiPackageVersion>
+    <AutoCADApiPackageVersion Condition="'$(AutoCADVersion)' == '2023'">24.2.0</AutoCADApiPackageVersion>
+    <AutoCADApiPackageVersion Condition="'$(AutoCADVersion)' == '2024'">24.3.0</AutoCADApiPackageVersion>
     <AutoCADApiPackageVersion Condition="'$(AutoCADVersion)' == '2025'">25.0.1</AutoCADApiPackageVersion>
     <AutoCADApiPackageVersion Condition="'$(AutoCADVersion)' == '2026'">25.1.0</AutoCADApiPackageVersion>
     <AutoCADApiPackageVersion Condition="'$(AutoCADVersion)' == '2027'">26.0.0</AutoCADApiPackageVersion>
   </PropertyGroup>
 
   <Target Name="ValidateAutoCADVersion" BeforeTargets="CollectPackageReferences;Build">
-    <Error Condition="'$(AutoCADApiPackageVersion)' == ''" Text="Unsupported AutoCADVersion '$(AutoCADVersion)'. Use 2025, 2026 or 2027." />
+    <Error Condition="'$(AutoCADApiPackageVersion)' == ''" Text="Unsupported AutoCADVersion '$(AutoCADVersion)'. Use 2022, 2023, 2024, 2025, 2026 or 2027." />
   </Target>
 
   <ItemGroup>

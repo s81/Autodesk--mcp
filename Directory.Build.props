@@ -3,8 +3,8 @@
     Shared build settings.
 
     Host add-ins are built once per product year. Select the year with
-      dotnet build src/AutodeskMcp.Revit   -p:RevitVersion=2025|2026|2027
-      dotnet build src/AutodeskMcp.AutoCAD -p:AutoCADVersion=2025|2026|2027
+      dotnet build src/AutodeskMcp.Revit   -p:RevitVersion=2022|2023|2024|2025|2026|2027
+      dotnet build src/AutodeskMcp.AutoCAD -p:AutoCADVersion=2022|2023|2024|2025|2026|2027
     Each year gets its own obj/ and bin/ folder so the builds never collide.
   -->
   <PropertyGroup>
@@ -12,7 +12,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Product>Autodesk MCP Bridge</Product>
     <Deterministic>true</Deterministic>
     <!-- Per-year obj folders live side by side; never compile one year's generated files into another. -->

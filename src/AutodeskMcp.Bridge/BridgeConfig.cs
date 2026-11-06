@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text.Json;
 
 namespace AutodeskMcp.Bridge;
 
@@ -29,7 +28,7 @@ public sealed class BridgeConfig
         try
         {
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<BridgeConfig>(File.ReadAllText(FilePath), BridgeJson.Options) ?? new BridgeConfig();
+                return BridgeJson.Deserialize<BridgeConfig>(File.ReadAllText(FilePath)) ?? new BridgeConfig();
         }
         catch (Exception ex)
         {
