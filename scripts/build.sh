@@ -2,7 +2,8 @@
 # Bash equivalent of scripts/build.ps1 (Linux/macOS/CI). Requires the .NET 10 SDK and python3 (for zipping).
 #
 # Builds the MCP server (win-x64, self-contained) and every Revit/AutoCAD add-in year, stages them under
-# artifacts/ (same layout as build.ps1, so scripts/install.ps1 works), and writes per-version zips to dist/.
+# artifacts/ (same layout as build.ps1, so scripts/install.ps1 works), and writes per-version zips plus the
+# Claude Desktop extension (AutodeskMcp-v<version>.mcpb) to dist/.
 #
 # Usage: scripts/build.sh [--skip-tests] [years...]      e.g. scripts/build.sh --skip-tests 2026
 set -euo pipefail
@@ -84,6 +85,23 @@ for y in years:
         (os.path.join(art, "autocad", "AutodeskMcp.bundle", "Contents", y), f"AutodeskMcp.bundle/Contents/{y}"),
     ])
 make(f"AutodeskMcp-Server-win-x64-v{version}.zip", [(os.path.join(art, "server"), "")])
+
+# Claude Desktop extension: double-click to install. The server copies the add-ins from addins/ into the
+# Revit/AutoCAD folders on start (src/AutodeskMcp.Server/AddinSetup.cs). Staged under artifacts/mcpb.
+stage = os.path.join(art, "mcpb")
+os.makedirs(stage, exist_ok=True)
+with open(os.path.join(root, "deploy", "mcpb", "manifest.json"), encoding="utf-8") as f:
+    manifest = f.read().replace("{{VERSION}}", version)
+with open(os.path.join(stage, "manifest.json"), "w", encoding="utf-8") as f:
+    f.write(manifest)
+mcpb_entries = [
+    (os.path.join(stage, "manifest.json"), "manifest.json"),
+    (os.path.join(art, "server"), "server"),
+    (os.path.join(art, "autocad", "AutodeskMcp.bundle"), "addins/autocad/AutodeskMcp.bundle"),
+]
+for y in years:
+    mcpb_entries.append((os.path.join(art, "revit", y), f"addins/revit/{y}"))
+make(f"AutodeskMcp-v{version}.mcpb", mcpb_entries)
 # Everything + installer, laid out so scripts/install.ps1 runs straight from the extracted folder.
 make(f"AutodeskMcp-All-v{version}.zip", [
     (art, "artifacts"),
@@ -92,6 +110,14 @@ make(f"AutodeskMcp-All-v{version}.zip", [
     (os.path.join(root, "README.md"), "README.md"),
 ])
 PY
+
+# Validate the extension manifest with the official MCPB tool when Node.js is available (it is on CI).
+if command -v npx >/dev/null 2>&1; then
+  echo "== Validating the .mcpb manifest"
+  npx --yes @anthropic-ai/mcpb@2.1.2 validate "$ART/mcpb/manifest.json"
+else
+  echo "== Skipping .mcpb manifest validation (npx not found)"
+fi
 
 echo
 echo "Done. Staged files: $ART"

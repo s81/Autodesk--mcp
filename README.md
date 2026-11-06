@@ -139,6 +139,23 @@ git push origin v0.1.0
 
 ## Install (Windows, per user, no admin rights)
 
+### Easiest: Claude Desktop extension (.mcpb)
+
+1. Download `AutodeskMcp-v<version>.mcpb` from the latest release.
+2. In Claude Desktop open **Settings → Desktop app → Manage** (next to Extensions; **Settings → Extensions**
+   in older versions) → **Advanced settings** → **Install Extension…**, choose the file and follow the
+   prompts. The extension is not code-signed yet, so Claude may warn about that.
+3. In the extension's settings you can allow or block changes and C# scripts, and set the busy timeout.
+4. Restart Revit/AutoCAD. When Claude starts the extension, it copies the add-ins into your Revit and
+   AutoCAD folders for every year installed under `C:\Program Files\Autodesk`, copying only files that
+   changed. `list_autodesk_instances` reports what it installed (`addinSetup`). If Revit or AutoCAD was open,
+   the add-in DLL may be in use: close the program and restart Claude.
+
+Removing the extension in Claude does not remove the add-ins; run `install.ps1 -Uninstall` from the
+`AutodeskMcp-All` zip for that. Use only one method on a PC: the extension or the zip installer below.
+
+### Alternative: zip + PowerShell installer
+
 1. Download `AutodeskMcp-All-v<version>.zip` from the latest release and **extract the whole zip** to a
    folder (don't run anything from inside the zip).
 2. Open **Windows PowerShell** in the extracted folder and run the installer. It detects your installed

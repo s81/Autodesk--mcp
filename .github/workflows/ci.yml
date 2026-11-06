@@ -83,6 +83,12 @@ jobs:
           -p:TreatWarningsAsErrors=true -o out/server
       - name: Check output
         run: test -s out/server/AutodeskMcp.Server.exe && ls -la out/server
+      - name: Validate the .mcpb manifest
+        run: |
+          version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props | head -1)"
+          mkdir -p out/mcpb
+          sed "s/{{VERSION}}/$version/g" deploy/mcpb/manifest.json > out/mcpb/manifest.json
+          npx --yes @anthropic-ai/mcpb@2.1.2 validate out/mcpb/manifest.json
 
   result:
     name: CI result

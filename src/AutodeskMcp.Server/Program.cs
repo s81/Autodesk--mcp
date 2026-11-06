@@ -1,7 +1,11 @@
+using System;
 using AutodeskMcp.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+// Installed from the .mcpb bundle: put the add-ins in place and apply the extension settings before serving.
+AddinSetup.RunAtStartup(message => Console.Error.WriteLine(message));
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -18,7 +22,7 @@ builder.Services
     {
         o.ServerInfo = new() { Name = "autodesk-mcp", Version = typeof(HostGateway).Assembly.GetName().Version?.ToString(3) ?? "0.1.0" };
         o.ServerInstructions =
-            "Tools for live Autodesk Revit and AutoCAD sessions (2025-2027) running on this computer. " +
+            "Tools for live Autodesk Revit and AutoCAD sessions (2022-2027) running on this computer. " +
             "Call list_autodesk_instances first. Revit internal units are decimal feet and radians; tools that take " +
             "lengths require an explicit 'units' argument. AutoCAD coordinates are in drawing units (see INSUNITS in " +
             "autocad_get_session_info). Prefer the specific tools; use *_execute_csharp only when no tool fits.";
