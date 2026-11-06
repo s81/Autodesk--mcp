@@ -3,6 +3,10 @@
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets MCP clients (Claude Desktop,
 Claude Code, etc.) read and edit **live** Revit and AutoCAD sessions on the same Windows computer.
 
+**User manual (English and Arabic):** [Autodesk MCP User Manual](https://claude.ai/artifact/KBaMnZaeiadpGxVjJMFYcD).
+It covers everyday use, example requests and troubleshooting for Revit/AutoCAD users, and installation and
+settings for IT staff.
+
 | Product | Years | Add-in target | API reference package |
 |---|---|---|---|
 | Revit | 2022, 2023, 2024 | `net48` (.NET Framework 4.8) | `Nice3point.Revit.Api.*` 2022.1.80 / 2023.1.90 / 2024.3.60 |
