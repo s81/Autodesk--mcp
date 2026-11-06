@@ -87,7 +87,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           cd dist
-          sha256sum *.zip > SHA256SUMS.txt
+          sha256sum *.zip *.mcpb > SHA256SUMS.txt
           cat SHA256SUMS.txt
           sed -e "s/{{VERSION}}/$VERSION/g" \
               -e "s/{{COMMIT}}/${GITHUB_SHA::7}/g" \
@@ -104,7 +104,7 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "::error::Release $TAG already exists. Delete it (or bump the version) and re-run."; exit 1
           fi
-          gh release create "$TAG" dist/*.zip dist/SHA256SUMS.txt \
+          gh release create "$TAG" dist/*.mcpb dist/*.zip dist/SHA256SUMS.txt \
             --target "$GITHUB_SHA" \
             --title "$TAG — Revit & AutoCAD 2022–2027" \
             --notes-file dist/RELEASE_NOTES.md \

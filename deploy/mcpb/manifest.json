@@ -1,0 +1,92 @@
+{
+  "manifest_version": "0.3",
+  "name": "autodesk-mcp",
+  "display_name": "Autodesk MCP (Revit & AutoCAD)",
+  "version": "{{VERSION}}",
+  "description": "Read and edit the Revit or AutoCAD 2022-2027 model open on this PC.",
+  "long_description": "Lets Claude work with live Autodesk Revit and AutoCAD 2022-2027 sessions on this Windows PC: read projects and drawings, fill parameters, create walls, layers and geometry, insert blocks, and run short C# scripts.\n\nInstalling this extension also installs the Revit and AutoCAD add-ins for every year found on this PC, into your own user folders (no administrator rights). Restart Revit or AutoCAD afterwards so they load the add-in.\n\nEverything stays on this computer: Claude talks to Revit and AutoCAD through a local pipe that only your Windows account can open.",
+  "author": {
+    "name": "Samer William Khalaf",
+    "url": "https://github.com/s81"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/s81/Autodesk--mcp.git"
+  },
+  "homepage": "https://github.com/s81/Autodesk--mcp",
+  "documentation": "https://github.com/s81/Autodesk--mcp#readme",
+  "support": "https://github.com/s81/Autodesk--mcp/issues",
+  "server": {
+    "type": "binary",
+    "entry_point": "server/AutodeskMcp.Server.exe",
+    "mcp_config": {
+      "command": "${__dirname}/server/AutodeskMcp.Server.exe",
+      "args": [],
+      "env": {
+        "AUTODESK_MCP_INSTALL_ADDINS": "${user_config.install_addins}",
+        "AUTODESK_MCP_ALLOW_MODIFICATIONS": "${user_config.allow_modifications}",
+        "AUTODESK_MCP_ALLOW_CODE_EXECUTION": "${user_config.allow_code_execution}",
+        "AUTODESK_MCP_TIMEOUT_SECONDS": "${user_config.main_thread_timeout_seconds}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "list_autodesk_instances", "description": "List running Revit and AutoCAD sessions that have the add-in loaded" },
+    { "name": "revit_get_session_info", "description": "Revit version, open documents, active view, units and selection count" },
+    { "name": "revit_list_elements", "description": "Find elements in the active Revit document with combinable filters" },
+    { "name": "revit_get_elements", "description": "Read Revit elements and their parameters by ID" },
+    { "name": "revit_get_selection", "description": "Read the current Revit selection" },
+    { "name": "revit_set_selection", "description": "Select Revit elements by ID" },
+    { "name": "revit_list_views", "description": "List Revit views and sheets" },
+    { "name": "revit_list_levels", "description": "List Revit levels and elevations" },
+    { "name": "revit_get_schedule_data", "description": "Read the rows of a Revit schedule" },
+    { "name": "revit_set_parameters", "description": "Set Revit element parameters (one undoable step)" },
+    { "name": "revit_create_walls", "description": "Create Revit walls (one undoable step)" },
+    { "name": "revit_delete_elements", "description": "Delete Revit elements (one undoable step)" },
+    { "name": "revit_execute_csharp", "description": "Run a C# snippet inside Revit" },
+    { "name": "autocad_get_session_info", "description": "AutoCAD drawing, units, current layer and layouts" },
+    { "name": "autocad_list_layers", "description": "List AutoCAD layers" },
+    { "name": "autocad_create_layer", "description": "Create or update an AutoCAD layer" },
+    { "name": "autocad_list_entities", "description": "Find AutoCAD entities by type, layer or space" },
+    { "name": "autocad_get_entities", "description": "Read AutoCAD entities by handle" },
+    { "name": "autocad_create_entities", "description": "Draw lines, polylines, arcs, circles, points and text" },
+    { "name": "autocad_modify_entities", "description": "Move, rotate, scale, re-layer, recolor or delete AutoCAD entities" },
+    { "name": "autocad_list_blocks", "description": "List AutoCAD block definitions" },
+    { "name": "autocad_insert_block", "description": "Insert an AutoCAD block with attributes" },
+    { "name": "autocad_send_command", "description": "Send a command string to the AutoCAD command line" },
+    { "name": "autocad_execute_csharp", "description": "Run a C# snippet inside AutoCAD" }
+  ],
+  "tools_generated": false,
+  "keywords": ["autodesk", "revit", "autocad", "bim", "cad", "civil 3d", "advance steel"],
+  "compatibility": {
+    "platforms": ["win32"]
+  },
+  "user_config": {
+    "install_addins": {
+      "type": "boolean",
+      "title": "Install Revit/AutoCAD add-ins",
+      "description": "Each time Claude starts, copy the add-ins into your Revit and AutoCAD add-in folders for every year installed on this PC (only changed files are copied). Turn off if IT installs the add-ins another way.",
+      "default": true
+    },
+    "allow_modifications": {
+      "type": "boolean",
+      "title": "Allow changes to models and drawings",
+      "description": "Off = read-only: Revit and AutoCAD refuse every tool that changes a model or drawing. Restart Revit/AutoCAD after changing this.",
+      "default": true
+    },
+    "allow_code_execution": {
+      "type": "boolean",
+      "title": "Allow C# scripts",
+      "description": "Lets Claude run C# code inside Revit and AutoCAD with your Windows rights. Restart Revit/AutoCAD after changing this.",
+      "default": true
+    },
+    "main_thread_timeout_seconds": {
+      "type": "number",
+      "title": "Busy timeout (seconds)",
+      "description": "How long a request waits while Revit/AutoCAD is busy (open dialog, running command) before it is cancelled. It never runs late.",
+      "default": 120,
+      "min": 10,
+      "max": 600
+    }
+  }
+}
