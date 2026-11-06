@@ -141,7 +141,8 @@ public sealed class BridgeHost : IDisposable
         // default owner becomes the pipe's owner and the only identity allowed in. The .NET 10 client's
         // CurrentUserOnly check compares the pipe owner with WindowsIdentity.GetCurrent().Owner, which is the
         // user for a normal process but BUILTIN\Administrators for an elevated ("Run as administrator") one,
-        // so using the user SID here would make elevated Revit/AutoCAD unreachable.
+        // so using the user SID here would make elevated Revit/AutoCAD unreachable. Keeping the owner as the only
+        // allowed identity also stops non-elevated processes of the same user from reaching an elevated host.
         SecurityIdentifier owner;
         using (var identity = WindowsIdentity.GetCurrent())
         {
@@ -150,7 +151,11 @@ public sealed class BridgeHost : IDisposable
         }
         var security = new PipeSecurity();
         security.SetOwner(owner);
-        security.AddAccessRule(new PipeAccessRule(owner, PipeAccessRights.FullControl, AccessControlType.Allow));
+        // Read/write as .NET grants, plus CreateNewInstance, which this process needs to open the next listening
+        // instance while earlier ones are still connected. No WRITE_DAC/WRITE_OWNER/DELETE: clients cannot
+        // rewrite the pipe's access list or take ownership. (PipeAccessRule adds SYNCHRONIZE to allow rules.)
+        security.AddAccessRule(new PipeAccessRule(owner,
+            PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance, AccessControlType.Allow));
         return new NamedPipeServerStream(
             _info.PipeName,
             PipeDirection.InOut,

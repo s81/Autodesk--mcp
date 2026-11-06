@@ -152,6 +152,22 @@ public sealed class BridgeTests
             host.Call("execute_script", new JsonObject { ["assembly"] = Convert.ToBase64String(asm) }));
         Assert.Contains("ArgumentOutOfRangeException", ex.Message);
     }
+
+    [Fact]
+    public void Framework_reference_list_has_only_assemblies()
+    {
+        // The 2022-2024 hosts add the .NET Framework directory to the reference list. It also holds native DLLs
+        // and manifest-less modules (System.EnterpriseServices.Wrapper.dll) that fail compilation with CS1509.
+        var paths = ScriptRunner.GetReferencePaths();
+        Assert.Contains(paths, p => Path.GetFileName(p).Equals("mscorlib.dll", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(paths, p => Path.GetFileName(p).Equals("System.EnterpriseServices.Wrapper.dll", StringComparison.OrdinalIgnoreCase));
+        var notAssemblies = paths.Where(p =>
+        {
+            try { System.Reflection.AssemblyName.GetAssemblyName(p); return false; }
+            catch { return true; }
+        }).ToList();
+        Assert.True(notAssemblies.Count == 0, "Not assemblies: " + string.Join(", ", notAssemblies));
+    }
 #else
 
     private static readonly IReadOnlyList<Microsoft.CodeAnalysis.MetadataReference> Refs =
@@ -206,6 +222,19 @@ public sealed class BridgeTests
         // assembly manifest (System.EnterpriseServices.Wrapper.dll) and must not reach the compiler (CS1509).
         string dir = Path.Combine(TestEnvironment.Home, "refs-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
+        try
+        {
+            CheckReferenceFiltering(dir);
+        }
+        finally
+        {
+            // Roslyn may still map the files; leftovers are removed with the rest of the test home if this fails.
+            try { Directory.Delete(dir, recursive: true); } catch { }
+        }
+    }
+
+    private static void CheckReferenceFiltering(string dir)
+    {
         string module = Path.Combine(dir, "Module.netmodule.dll");
         using (var stream = File.Create(module))
         {
