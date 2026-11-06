@@ -98,6 +98,7 @@ mcpb_entries = [
     (os.path.join(stage, "manifest.json"), "manifest.json"),
     (os.path.join(art, "server"), "server"),
     (os.path.join(art, "autocad", "AutodeskMcp.bundle"), "addins/autocad/AutodeskMcp.bundle"),
+    (os.path.join(root, "LICENSE"), "LICENSE"),
 ]
 for y in years:
     mcpb_entries.append((os.path.join(art, "revit", y), f"addins/revit/{y}"))
@@ -108,6 +109,7 @@ make(f"AutodeskMcp-All-v{version}.zip", [
     (os.path.join(root, "scripts", "install.ps1"), "scripts/install.ps1"),
     (os.path.join(root, "deploy", "config.example.json"), "config.example.json"),
     (os.path.join(root, "README.md"), "README.md"),
+    (os.path.join(root, "LICENSE"), "LICENSE"),
 ])
 PY
 
