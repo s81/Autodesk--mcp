@@ -137,13 +137,20 @@ public sealed class BridgeHost : IDisposable
     private NamedPipeServerStream CreatePipe()
     {
 #if NETFRAMEWORK
-        // .NET Framework has no PipeOptions.CurrentUserOnly: grant access to the current user only and make
-        // them the owner, which is also what the .NET 10 client's CurrentUserOnly check verifies.
-        var user = WindowsIdentity.GetCurrent().User
-                   ?? throw new InvalidOperationException("Cannot determine the current Windows user.");
+        // .NET Framework has no PipeOptions.CurrentUserOnly, so reproduce what .NET does for it: the token's
+        // default owner becomes the pipe's owner and the only identity allowed in. The .NET 10 client's
+        // CurrentUserOnly check compares the pipe owner with WindowsIdentity.GetCurrent().Owner, which is the
+        // user for a normal process but BUILTIN\Administrators for an elevated ("Run as administrator") one,
+        // so using the user SID here would make elevated Revit/AutoCAD unreachable.
+        SecurityIdentifier owner;
+        using (var identity = WindowsIdentity.GetCurrent())
+        {
+            owner = identity.Owner ?? identity.User
+                    ?? throw new InvalidOperationException("Cannot determine the current Windows user.");
+        }
         var security = new PipeSecurity();
-        security.SetOwner(user);
-        security.AddAccessRule(new PipeAccessRule(user, PipeAccessRights.FullControl, AccessControlType.Allow));
+        security.SetOwner(owner);
+        security.AddAccessRule(new PipeAccessRule(owner, PipeAccessRights.FullControl, AccessControlType.Allow));
         return new NamedPipeServerStream(
             _info.PipeName,
             PipeDirection.InOut,

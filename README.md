@@ -180,7 +180,9 @@ Where files go:
 ## Security and policy
 
 * The pipe only accepts the current Windows user (`PipeOptions.CurrentUserOnly` on 2025–2027; an access
-  list granting only the current user, who is also the pipe's owner, on 2022–2024). Each
+  list granting only the current user, who is also the pipe's owner, on 2022–2024). Run Claude and
+  Revit/AutoCAD at the same permission level: if one is started with *Run as administrator* and the other
+  is not, Windows treats them as different owners and the connection is refused. Each
   request must also carry a random 256-bit token. The token is stored only in your profile's discovery
   file.
 * Nothing listens on the network.
