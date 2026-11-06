@@ -27,8 +27,16 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <ProjectReference Include="..\..\src\AutodeskMcp.Server\AutodeskMcp.Server.csproj" />
-    <!-- Built (all of its target frameworks) but not referenced: the cross-process tests start it as a separate process. -->
+    <!--
+      Built but not referenced: the cross-process tests start it as a separate process. Each runtime is requested
+      explicitly; a plain project reference would only build the one matching this test assembly (net10.0).
+      net48 also compiles on Linux/macOS; the tests that run it are skipped there.
+    -->
     <ProjectReference Include="..\AutodeskMcp.FakeHost\AutodeskMcp.FakeHost.csproj"
-                      ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" Private="false" />
+                      ReferenceOutputAssembly="false" Private="false"
+                      SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net10.0" />
+    <ProjectReference Include="..\AutodeskMcp.FakeHost\AutodeskMcp.FakeHost.csproj"
+                      ReferenceOutputAssembly="false" Private="false"
+                      SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net48" />
   </ItemGroup>
 </Project>
