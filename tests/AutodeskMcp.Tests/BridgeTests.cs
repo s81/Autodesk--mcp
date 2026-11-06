@@ -162,8 +162,10 @@ public sealed class BridgeTests
         string runtimeDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
         var paths = ScriptRunner.GetReferencePaths();
         Assert.Contains(paths, p => Path.GetFileName(p).Equals("mscorlib.dll", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(paths, p => p.StartsWith(runtimeDir, StringComparison.OrdinalIgnoreCase)
-                                    && Path.GetFileName(p).Equals("System.Xml.dll", StringComparison.OrdinalIgnoreCase));
+        // Assemblies the process already loaded keep their own path (often the GAC), so count the directory's files
+        // in general instead of naming one; the directory holds well over 50 DLLs.
+        int fromRuntimeDir = paths.Count(p => p.StartsWith(runtimeDir, StringComparison.OrdinalIgnoreCase));
+        Assert.True(fromRuntimeDir >= 50, $"Only {fromRuntimeDir} paths from {runtimeDir}.");
     }
 #else
 
