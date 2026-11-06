@@ -108,8 +108,7 @@ public static class ScriptRunner
 
 #if NETFRAMEWORK
         // e.g. C:\Windows\Microsoft.NET\Framework64\v4.0.30319\ (mscorlib, System.*, netstandard facade, ...)
-        string runtimeDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
-        foreach (string path in SafeEnumerate(runtimeDir, "*.dll").Concat(SafeEnumerate(Path.Combine(runtimeDir, "WPF"), "*.dll")))
+        foreach (string path in FrameworkAssemblies.Value)
         {
             string name = Path.GetFileNameWithoutExtension(path);
             if (!byName.ContainsKey(name)) byName[name] = path;
@@ -129,6 +128,34 @@ public static class ScriptRunner
     }
 
 #if NETFRAMEWORK
+    /// <summary>
+    /// The real assemblies in the .NET Framework directory (and its WPF folder). The directory also holds native
+    /// DLLs and modules without an assembly manifest (e.g. System.EnterpriseServices.Wrapper.dll), which the
+    /// compiler rejects (CS1509). The directory does not change while the host runs, so it is scanned once.
+    /// </summary>
+    private static readonly Lazy<IReadOnlyList<string>> FrameworkAssemblies = new(() =>
+    {
+        string runtimeDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
+        return SafeEnumerate(runtimeDir, "*.dll")
+            .Concat(SafeEnumerate(Path.Combine(runtimeDir, "WPF"), "*.dll"))
+            .Where(IsAssemblyFile)
+            .ToList();
+    });
+
+    /// <summary>True if <paramref name="path"/> has an assembly manifest (false for native DLLs and modules).</summary>
+    private static bool IsAssemblyFile(string path)
+    {
+        try
+        {
+            AssemblyName.GetAssemblyName(path); // reads the manifest only; does not load the assembly
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static IEnumerable<string> SafeEnumerate(string dir, string pattern)
     {
         try { return Directory.Exists(dir) ? Directory.GetFiles(dir, pattern) : Array.Empty<string>(); }

@@ -27,7 +27,14 @@ public sealed record CompileResult(byte[]? Assembly, IReadOnlyList<string> Error
 /// </summary>
 public sealed class ScriptCompiler(HostGateway gateway)
 {
-    private readonly ConcurrentDictionary<string, IReadOnlyList<MetadataReference>> _references = new();
+    /// <summary>
+    /// Latest reference set per host instance, keyed by instance id. The full path list (not a hash) is kept
+    /// to detect changes exactly; an instance's previous set is replaced, so memory does not grow as the host
+    /// loads more assemblies.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, CachedReferences> _references = new();
+
+    private sealed record CachedReferences(string Paths, IReadOnlyList<MetadataReference> References);
 
     public static readonly string[] RevitUsings =
     {
@@ -130,7 +137,7 @@ public sealed class ScriptCompiler(HostGateway gateway)
         var list = new List<MetadataReference>();
         foreach (string path in paths)
         {
-            if (!File.Exists(path) || !IsAssembly(path)) continue;
+            if (!IsAssembly(path)) continue; // also false for missing or unreadable files
             list.Add(MetadataReference.CreateFromFile(path));
         }
         return list;
@@ -163,9 +170,17 @@ public sealed class ScriptCompiler(HostGateway gateway)
         var paths = (node as JsonArray)?.Select(n => n?.ToString() ?? "").Where(p => p.Length > 0).ToList()
                     ?? throw new McpException("Add-in returned no reference list.");
 
-        string key = instance.InstanceId + "|" + string.Join("|", paths).GetHashCode();
-        var refs = _references.GetOrAdd(key, _ => CreateReferences(paths));
-        return Compile(source, refs);
+        string joined = string.Join("|", paths);
+        if (!_references.TryGetValue(instance.InstanceId, out var cached) || !string.Equals(cached.Paths, joined, StringComparison.Ordinal))
+        {
+            cached = new CachedReferences(joined, CreateReferences(paths));
+            _references[instance.InstanceId] = cached;
+            // Drop the sets of hosts that have since closed.
+            var live = new HashSet<string>(InstanceRegistry.ListLive().Select(i => i.InstanceId), StringComparer.Ordinal);
+            foreach (string id in _references.Keys)
+                if (id != instance.InstanceId && !live.Contains(id)) _references.TryRemove(id, out _);
+        }
+        return Compile(source, cached.References);
     }
 
     public static string FormatErrors(CompileResult r) =>
