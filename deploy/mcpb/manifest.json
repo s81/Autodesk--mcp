@@ -57,6 +57,7 @@
     { "name": "autocad_execute_csharp", "description": "Run a C# snippet inside AutoCAD" }
   ],
   "tools_generated": false,
+  "license": "MIT",
   "keywords": ["autodesk", "revit", "autocad", "bim", "cad", "civil 3d", "advance steel"],
   "compatibility": {
     "platforms": ["win32"]

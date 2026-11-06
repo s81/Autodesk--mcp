@@ -3,9 +3,10 @@
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets MCP clients (Claude Desktop,
 Claude Code, etc.) read and edit **live** Revit and AutoCAD sessions on the same Windows computer.
 
-**User manual (English and Arabic):** [Autodesk MCP User Manual](https://claude.ai/artifact/KBaMnZaeiadpGxVjJMFYcD).
-It covers everyday use, example requests and troubleshooting for Revit/AutoCAD users, and installation and
-settings for IT staff.
+**User manual (English and Arabic):** [docs/USER_MANUAL.md](docs/USER_MANUAL.md). It covers everyday use,
+example requests and troubleshooting for Revit/AutoCAD users, and installation and settings for IT staff.
+The same manual is also kept as a [shared doc](https://claude.ai/artifact/KBaMnZaeiadpGxVjJMFYcD) for people
+it has been shared with.
 
 | Product | Years | Add-in target | API reference package |
 |---|---|---|---|
@@ -256,3 +257,11 @@ session. Before production use, test each year you deploy, at minimum:
   those add-ins target it. The MCP server is self-contained .NET 10.
 * **`AutoCAD.NET` 25.0.2 and 25.1.1 target net10.0 on NuGet**, which conflicts with the .NET 8 runtime
   documented for AutoCAD 2025/2026. This project pins 25.0.1 and 25.1.0, which target net8.0.
+
+## License
+
+[MIT](LICENSE) © 2026 Samer William Khalaf.
+
+Autodesk, Revit, AutoCAD and Civil 3D are registered trademarks of Autodesk, Inc. This project is not
+affiliated with or endorsed by Autodesk. It builds against Autodesk's public API reference packages but does
+not include or redistribute any Autodesk binaries.

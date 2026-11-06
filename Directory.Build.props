@@ -13,6 +13,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Version>0.3.0</Version>
+    <Copyright>Copyright (c) 2026 Samer William Khalaf</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Product>Autodesk MCP Bridge</Product>
     <Deterministic>true</Deterministic>
     <!-- Per-year obj folders live side by side; never compile one year's generated files into another. -->
