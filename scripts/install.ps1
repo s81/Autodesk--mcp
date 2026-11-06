@@ -11,9 +11,25 @@
   By default it installs for every Revit/AutoCAD year found under C:\Program Files\Autodesk.
   It does NOT edit your MCP client configuration; it prints the snippet to add.
 
+.PARAMETER RevitYears
+  Revit years to install instead of the detected ones. With -File (as in the examples) PowerShell passes
+  every argument as one plain string, so give ONE year per run (-RevitYears 2026); "2025,2026" or @(...)
+  are not split into several years. For several years, run the script once per year, or omit the
+  parameter and let it detect them. A literal @() or an empty value means "none" (same as -SkipRevit).
+
+.PARAMETER AutoCADYears
+  Same as -RevitYears, for AutoCAD. A literal @() or an empty value means "none" (same as -SkipAutoCAD).
+
+.PARAMETER SkipRevit
+  Do not install the Revit add-in.
+
+.PARAMETER SkipAutoCAD
+  Do not install the AutoCAD bundle.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-  powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -RevitYears 2026 -AutoCADYears @()
+  powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -RevitYears 2026 -SkipAutoCAD
+  powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -SkipRevit
   powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
 
   Works in the Windows PowerShell 5.1 that ships with Windows (no need for PowerShell 7 / pwsh).
@@ -21,6 +37,8 @@
 param(
     [string[]] $RevitYears,
     [string[]] $AutoCADYears,
+    [switch] $SkipRevit,
+    [switch] $SkipAutoCAD,
     [switch] $Uninstall
 )
 
@@ -32,6 +50,20 @@ $supported = @('2022', '2023', '2024', '2025', '2026', '2027')
 function Get-InstalledYears([string] $pattern) {
     $supported | Where-Object { Test-Path (Join-Path $env:ProgramFiles ("Autodesk\" + ($pattern -f $_))) }
 }
+
+# With -File, "-AutoCADYears @()" arrives as the string '@()'. Treat that, '' and blanks as "none".
+function Get-RequestedYears([string[]] $years) {
+    if ($null -eq $years) { return $null }
+    return , @($years | Where-Object { $null -ne $_ -and $_.Trim() -ne '' -and $_.Trim() -ne '@()' } |
+        ForEach-Object { $_.Trim() })
+}
+
+$RevitYears = Get-RequestedYears $RevitYears
+$AutoCADYears = Get-RequestedYears $AutoCADYears
+if ($SkipRevit -and $RevitYears.Count -gt 0) { throw 'Use either -SkipRevit or -RevitYears, not both.' }
+if ($SkipAutoCAD -and $AutoCADYears.Count -gt 0) { throw 'Use either -SkipAutoCAD or -AutoCADYears, not both.' }
+if ($SkipRevit) { $RevitYears = @() }
+if ($SkipAutoCAD) { $AutoCADYears = @() }
 
 if ($null -eq $RevitYears) { $RevitYears = @(Get-InstalledYears 'Revit {0}') }
 if ($null -eq $AutoCADYears) {
@@ -65,6 +97,7 @@ New-Item -ItemType Directory -Force $serverDir | Out-Null
 Copy-Item (Join-Path $artifacts 'server/*') $serverDir -Recurse -Force
 Write-Host "MCP server  -> $serverDir"
 
+if ($RevitYears.Count -eq 0) { Write-Host 'Revit       -> skipped (none requested or detected)' }
 foreach ($year in $RevitYears) {
     $src = Join-Path $artifacts "revit/$year"
     if (-not (Test-Path $src)) { Write-Warning "No Revit $year build in artifacts; skipped."; continue }
@@ -78,6 +111,8 @@ if ($AutoCADYears.Count -gt 0) {
     New-Item -ItemType Directory -Force $bundleDir | Out-Null
     Copy-Item (Join-Path $artifacts 'autocad/AutodeskMcp.bundle/*') $bundleDir -Recurse -Force
     Write-Host "AutoCAD     -> $bundleDir (years: $($AutoCADYears -join ', '))"
+} else {
+    Write-Host 'AutoCAD     -> skipped (none requested or detected)'
 }
 
 $exe = (Join-Path $serverDir 'AutodeskMcp.Server.exe').Replace('\', '\\')

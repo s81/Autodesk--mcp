@@ -143,6 +143,12 @@ git push origin v0.1.0
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\install.ps1
    ```
+   To install only one product, add `-SkipRevit` or `-SkipAutoCAD`. To pick a year instead of the
+   detected ones, add `-RevitYears 2026` (one year per run: with `-File`, values such as `2025,2026`
+   or `@()` are passed as plain text, not as a list):
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -RevitYears 2026 -SkipAutoCAD
+   ```
 3. Register the server with Claude (below), then **fully quit Claude** (taskbar tray icon → Quit) and
    restart Revit/AutoCAD. If Claude still doesn't show the server, restart the PC.
 
