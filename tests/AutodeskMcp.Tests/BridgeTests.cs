@@ -154,19 +154,16 @@ public sealed class BridgeTests
     }
 
     [Fact]
-    public void Framework_reference_list_has_only_assemblies()
+    public void Framework_reference_list_includes_the_runtime_directory()
     {
-        // The 2022-2024 hosts add the .NET Framework directory to the reference list. It also holds native DLLs
-        // and manifest-less modules (System.EnterpriseServices.Wrapper.dll) that fail compilation with CS1509.
+        // The 2022-2024 hosts list the .NET Framework directory without opening each file (that is too slow on a
+        // cold PC); the server filters out non-assemblies. The cross-process net48 script test compiles against
+        // this exact list, so a filtering regression shows up there as CS1509.
+        string runtimeDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
         var paths = ScriptRunner.GetReferencePaths();
         Assert.Contains(paths, p => Path.GetFileName(p).Equals("mscorlib.dll", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(paths, p => Path.GetFileName(p).Equals("System.EnterpriseServices.Wrapper.dll", StringComparison.OrdinalIgnoreCase));
-        var notAssemblies = paths.Where(p =>
-        {
-            try { System.Reflection.AssemblyName.GetAssemblyName(p); return false; }
-            catch { return true; }
-        }).ToList();
-        Assert.True(notAssemblies.Count == 0, "Not assemblies: " + string.Join(", ", notAssemblies));
+        Assert.Contains(paths, p => p.StartsWith(runtimeDir, StringComparison.OrdinalIgnoreCase)
+                                    && Path.GetFileName(p).Equals("System.Xml.dll", StringComparison.OrdinalIgnoreCase));
     }
 #else
 
