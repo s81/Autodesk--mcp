@@ -200,6 +200,38 @@ public sealed class BridgeTests
     }
 
     [Fact]
+    public void Reference_list_skips_modules_and_native_files()
+    {
+        // .NET Framework hosts report every DLL in the framework directory; some are modules without an
+        // assembly manifest (System.EnterpriseServices.Wrapper.dll) and must not reach the compiler (CS1509).
+        string dir = Path.Combine(TestEnvironment.Home, "refs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string module = Path.Combine(dir, "Module.netmodule.dll");
+        using (var stream = File.Create(module))
+        {
+            var emit = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create("Module",
+                    new[] { Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText("public class M {}") }, Refs,
+                    new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.NetModule))
+                .Emit(stream);
+            Assert.True(emit.Success);
+        }
+        string native = Path.Combine(dir, "native.dll");
+        File.WriteAllBytes(native, new byte[] { 0x4D, 0x5A, 0, 0, 1, 2, 3 });
+        string real = typeof(object).Assembly.Location;
+
+        var refs = ScriptCompiler.CreateReferences(new[] { module, native, real });
+        Assert.Single(refs);
+        Assert.False(ScriptCompiler.IsAssembly(module));
+        Assert.True(ScriptCompiler.IsAssembly(real));
+
+        // And a compilation that is handed the full list still succeeds.
+        var compiled = ScriptCompiler.Compile(
+            ScriptCompiler.Wrap(new[] { "System" }, null, "System.Text.StringBuilder output", "", "return 1;"),
+            ScriptCompiler.CreateReferences(ScriptRunner.GetReferencePaths().Append(module).Append(native)));
+        Assert.True(compiled.Success, string.Join("\n", compiled.Errors));
+    }
+
+    [Fact]
     public void Using_directives_cannot_inject_code()
     {
         Assert.ThrowsAny<Exception>(() => ScriptCompiler.WrapRevit("return 1;", new[] { "System; } class X { " }));
