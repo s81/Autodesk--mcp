@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Shared between the MCP server (net10.0) and the host add-ins
-    (net8.0-windows for 2025/2026, net10.0-windows for 2027).
-    It must stay dependency-free: it is loaded inside Revit/AutoCAD.
+    Shared between the MCP server (net10.0) and the host add-ins:
+      net48  -> Revit/AutoCAD 2022, 2023, 2024 (.NET Framework 4.8)
+      net8.0 -> Revit/AutoCAD 2025, 2026 (net8.0-windows) and 2027 (net10.0-windows), and the server
+    It must stay dependency-free: it is loaded inside Revit/AutoCAD. On net48 it uses its own MiniJson
+    instead of System.Text.Json, which .NET Framework does not include.
   -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
     <RootNamespace>AutodeskMcp.Bridge</RootNamespace>
   </PropertyGroup>
 </Project>

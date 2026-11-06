@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
+#if NETFRAMEWORK
+using System.Security.AccessControl;
+using System.Security.Principal;
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -61,6 +65,7 @@ public sealed class BridgeHost : IDisposable
     private readonly Action<string> _log;
     private readonly CancellationTokenSource _cts = new();
     private Task? _acceptLoop;
+    private volatile NamedPipeServerStream? _listening;
 
     public BridgeHost(InstanceInfo info, BridgeConfig config, IMainThreadDispatcher dispatcher,
         IEnumerable<BridgeCommand> commands, Action<string>? log = null)
@@ -90,7 +95,7 @@ public sealed class BridgeHost : IDisposable
         { RequiresMainThread = false };
     }
 
-    public static string NewToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+    public static string NewToken() => Compat.RandomHex(32);
 
     public void Start()
     {
@@ -106,13 +111,8 @@ public sealed class BridgeHost : IDisposable
             NamedPipeServerStream? server = null;
             try
             {
-                // CurrentUserOnly: the OS rejects clients running as a different user.
-                server = new NamedPipeServerStream(
-                    _info.PipeName,
-                    PipeDirection.InOut,
-                    NamedPipeServerStream.MaxAllowedServerInstances,
-                    PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+                server = CreatePipe();
+                _listening = server;
 
                 await server.WaitForConnectionAsync(ct).ConfigureAwait(false);
                 var connected = server;
@@ -133,6 +133,37 @@ public sealed class BridgeHost : IDisposable
         }
     }
 
+    /// <summary>A pipe that only the current Windows user can open.</summary>
+    private NamedPipeServerStream CreatePipe()
+    {
+#if NETFRAMEWORK
+        // .NET Framework has no PipeOptions.CurrentUserOnly: grant access to the current user only and make
+        // them the owner, which is also what the .NET 10 client's CurrentUserOnly check verifies.
+        var user = WindowsIdentity.GetCurrent().User
+                   ?? throw new InvalidOperationException("Cannot determine the current Windows user.");
+        var security = new PipeSecurity();
+        security.SetOwner(user);
+        security.AddAccessRule(new PipeAccessRule(user, PipeAccessRights.FullControl, AccessControlType.Allow));
+        return new NamedPipeServerStream(
+            _info.PipeName,
+            PipeDirection.InOut,
+            NamedPipeServerStream.MaxAllowedServerInstances,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous,
+            0,
+            0,
+            security);
+#else
+        // CurrentUserOnly: the OS rejects clients running as a different user.
+        return new NamedPipeServerStream(
+            _info.PipeName,
+            PipeDirection.InOut,
+            NamedPipeServerStream.MaxAllowedServerInstances,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+#endif
+    }
+
     private async Task HandleConnectionAsync(NamedPipeServerStream pipe, CancellationToken ct)
     {
         using (pipe)
@@ -143,7 +174,7 @@ public sealed class BridgeHost : IDisposable
             {
                 string? json = await Framing.ReadAsync(pipe, ct).ConfigureAwait(false);
                 if (json is null) return;
-                var request = JsonSerializer.Deserialize<BridgeRequest>(json, BridgeJson.Options)
+                var request = BridgeJson.Deserialize<BridgeRequest>(json)
                               ?? throw new BridgeException("Empty request.");
                 requestId = request.Id;
                 response = await ExecuteAsync(request, ct).ConfigureAwait(false);
@@ -155,7 +186,7 @@ public sealed class BridgeHost : IDisposable
 
             try
             {
-                await Framing.WriteAsync(pipe, JsonSerializer.Serialize(response, BridgeJson.Options), ct).ConfigureAwait(false);
+                await Framing.WriteAsync(pipe, BridgeJson.Serialize(response), ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -203,7 +234,7 @@ public sealed class BridgeHost : IDisposable
         if (string.IsNullOrEmpty(token)) return false;
         byte[] a = Encoding.UTF8.GetBytes(token);
         byte[] b = Encoding.UTF8.GetBytes(_info.Token);
-        return a.Length == b.Length && CryptographicOperations.FixedTimeEquals(a, b);
+        return Compat.FixedTimeEquals(a, b);
     }
 
     private static BridgeResponse Fail(string id, Exception ex)
@@ -221,9 +252,9 @@ public sealed class BridgeHost : IDisposable
     /// <summary>Stack frames that point into an execute_csharp snippet, so the model can locate the failing line.</summary>
     private static string ScriptFrames(Exception ex)
     {
-        var frames = (ex.StackTrace ?? "").Split('\n')
+        var frames = (ex.StackTrace ?? "").Split(new[] { '\n' })
             .Select(l => l.Trim())
-            .Where(l => l.Contains("script.cs", StringComparison.Ordinal) || l.Contains(ScriptRunner.EntryType + "." + ScriptRunner.EntryMethod, StringComparison.Ordinal))
+            .Where(l => l.IndexOf("script.cs", StringComparison.Ordinal) >= 0 || l.IndexOf(ScriptRunner.EntryType + "." + ScriptRunner.EntryMethod, StringComparison.Ordinal) >= 0)
             .Take(5)
             .ToList();
         return frames.Count == 0 ? "" : "\n" + string.Join("\n", frames);
@@ -232,6 +263,8 @@ public sealed class BridgeHost : IDisposable
     public void Dispose()
     {
         _cts.Cancel();
+        // .NET Framework does not always abort a pending WaitForConnectionAsync on cancellation.
+        try { _listening?.Dispose(); } catch { }
         try { _acceptLoop?.Wait(TimeSpan.FromSeconds(2)); } catch { }
         _cts.Dispose();
     }

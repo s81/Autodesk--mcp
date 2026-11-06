@@ -12,9 +12,11 @@
   It does NOT edit your MCP client configuration; it prints the snippet to add.
 
 .EXAMPLE
-  pwsh scripts/install.ps1
-  pwsh scripts/install.ps1 -RevitYears 2026 -AutoCADYears @()
-  pwsh scripts/install.ps1 -Uninstall
+  powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+  powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -RevitYears 2026 -AutoCADYears @()
+  powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
+
+  Works in the Windows PowerShell 5.1 that ships with Windows (no need for PowerShell 7 / pwsh).
 #>
 param(
     [string[]] $RevitYears,
@@ -25,7 +27,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $artifacts = Join-Path $root 'artifacts'
-$supported = @('2025', '2026', '2027')
+$supported = @('2022', '2023', '2024', '2025', '2026', '2027')
 
 function Get-InstalledYears([string] $pattern) {
     $supported | Where-Object { Test-Path (Join-Path $env:ProgramFiles ("Autodesk\" + ($pattern -f $_))) }
@@ -56,7 +58,7 @@ if ($Uninstall) {
 }
 
 if (-not (Test-Path (Join-Path $artifacts 'server/AutodeskMcp.Server.exe'))) {
-    throw "Build output not found. Run: pwsh scripts/build.ps1"
+    throw "Build output not found next to this script (expected an artifacts folder). Extract the whole AutodeskMcp-All zip and run this script from its scripts folder."
 }
 
 New-Item -ItemType Directory -Force $serverDir | Out-Null

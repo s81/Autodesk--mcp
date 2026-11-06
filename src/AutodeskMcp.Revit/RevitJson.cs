@@ -1,6 +1,10 @@
 using System;
 using System.Linq;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using AutodeskMcp.Bridge;
 using Autodesk.Revit.DB;
 
@@ -11,14 +15,14 @@ internal static class RevitJson
 {
     public static JsonNode? Convert(object value, Func<object?, JsonNode?> recurse) => value switch
     {
-        ElementId id => JsonValue.Create(id.Value),
+        ElementId id => JsonValue.Create(id.IdValue()),
         XYZ p => Xyz(p),
         UV uv => new JsonArray(R(uv.U), R(uv.V)),
         Element e => Summary(e),
         Parameter p => ParameterJson(p),
         Curve c => CurveJson(c),
         BoundingBoxXYZ bb => new JsonObject { ["min"] = Xyz(bb.Min), ["max"] = Xyz(bb.Max) },
-        Category c => new JsonObject { ["id"] = c.Id.Value, ["name"] = c.Name },
+        Category c => new JsonObject { ["id"] = c.Id.IdValue(), ["name"] = c.Name },
         ForgeTypeId f => JsonValue.Create(f.TypeId),
         Transform t => new JsonObject { ["origin"] = Xyz(t.Origin), ["basisX"] = Xyz(t.BasisX), ["basisY"] = Xyz(t.BasisY), ["basisZ"] = Xyz(t.BasisZ) },
         _ => null,
@@ -40,7 +44,7 @@ internal static class RevitJson
         var doc = e.Document;
         var o = new JsonObject
         {
-            ["id"] = e.Id.Value,
+            ["id"] = e.Id.IdValue(),
             ["name"] = SafeName(e),
             ["className"] = e.GetType().Name,
         };
@@ -48,20 +52,20 @@ internal static class RevitJson
         if (e.Category is { } cat)
         {
             o["category"] = cat.Name;
-            o["builtInCategory"] = cat.BuiltInCategory.ToString();
+            o["builtInCategory"] = RevitCompat.BuiltInCategoryName(cat);
         }
 
         var typeId = e.GetTypeId();
         if (typeId != ElementId.InvalidElementId && doc.GetElement(typeId) is ElementType type)
         {
-            o["typeId"] = typeId.Value;
+            o["typeId"] = typeId.IdValue();
             o["typeName"] = SafeName(type);
             o["familyName"] = type.FamilyName;
         }
 
         if (e.LevelId != ElementId.InvalidElementId && doc.GetElement(e.LevelId) is Level level)
         {
-            o["levelId"] = level.Id.Value;
+            o["levelId"] = level.Id.IdValue();
             o["levelName"] = level.Name;
         }
 
@@ -112,7 +116,7 @@ internal static class RevitJson
                 StorageType.Double => JsonValue.Create(R(p.AsDouble())),
                 StorageType.Integer => JsonValue.Create(p.AsInteger()),
                 StorageType.String => JsonValue.Create(p.AsString()),
-                StorageType.ElementId => JsonValue.Create(p.AsElementId().Value),
+                StorageType.ElementId => JsonValue.Create(p.AsElementId().IdValue()),
                 _ => null,
             };
         }

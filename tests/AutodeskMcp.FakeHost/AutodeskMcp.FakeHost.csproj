@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    A stand-in for Revit/AutoCAD used by the tests: it hosts the real BridgeHost in its own process.
+      net48   -> behaves like the 2022-2024 add-ins (.NET Framework, MiniJson, ACL-protected pipe). Windows only.
+      net10.0 -> behaves like the 2025-2027 add-ins (System.Text.Json, CurrentUserOnly pipe).
+    The tests start it, talk to it through the real .NET 10 client and MCP server, then close its stdin to stop it.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net10.0;net48</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AutodeskMcp.Bridge\AutodeskMcp.Bridge.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,7 +1,10 @@
 using System;
 using System.IO.Pipes;
-using System.Text.Json;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +21,12 @@ public static class BridgeClient
 
         using var pipe = new NamedPipeClientStream(
             ".", instance.PipeName, PipeDirection.InOut,
+#if NETFRAMEWORK
+            PipeOptions.Asynchronous);
+#else
+            // CurrentUserOnly: refuse to talk to a pipe server owned by a different user.
             PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+#endif
 
         try
         {
@@ -42,7 +50,7 @@ public static class BridgeClient
         string? json;
         try
         {
-            await Framing.WriteAsync(pipe, JsonSerializer.Serialize(request, BridgeJson.Options), cts.Token).ConfigureAwait(false);
+            await Framing.WriteAsync(pipe, BridgeJson.Serialize(request), cts.Token).ConfigureAwait(false);
             json = await Framing.ReadAsync(pipe, cts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
@@ -54,7 +62,7 @@ public static class BridgeClient
 
         if (json is null) throw new BridgeException("The add-in closed the connection without a response.");
 
-        var response = JsonSerializer.Deserialize<BridgeResponse>(json, BridgeJson.Options)
+        var response = BridgeJson.Deserialize<BridgeResponse>(json)
                        ?? throw new BridgeException("Empty response from add-in.");
         if (!response.Ok) throw new BridgeException(response.Error ?? "Unknown add-in error.");
         return response.Result;

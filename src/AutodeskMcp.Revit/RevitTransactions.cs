@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json.Nodes;
+#endif
 using AutodeskMcp.Bridge;
 using Autodesk.Revit.DB;
 

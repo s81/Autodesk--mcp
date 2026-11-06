@@ -14,11 +14,11 @@ YEARS=()
 for arg in "$@"; do
   case "$arg" in
     --skip-tests) SKIP_TESTS=1 ;;
-    2025|2026|2027) YEARS+=("$arg") ;;
+    2022|2023|2024|2025|2026|2027) YEARS+=("$arg") ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
-[ ${#YEARS[@]} -eq 0 ] && YEARS=(2025 2026 2027)
+[ ${#YEARS[@]} -eq 0 ] && YEARS=(2022 2023 2024 2025 2026 2027)
 
 ART="$ROOT/artifacts"
 DIST="$ROOT/dist"

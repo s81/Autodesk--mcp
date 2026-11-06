@@ -1,14 +1,20 @@
-Autodesk MCP Bridge: an MCP server plus add-ins that let MCP clients (Claude Desktop, Claude Code, …) read and edit live **Revit** and **AutoCAD** 2025–2027 sessions on the same Windows PC.
+Autodesk MCP Bridge: an MCP server plus add-ins that let MCP clients (Claude Desktop, Claude Code, …) read and edit live **Revit** and **AutoCAD** 2022–2027 sessions on the same Windows PC.
 
 ## Downloads
 
 | File | What it is | Extract to |
 |---|---|---|
-| `AutodeskMcp-All-v{{VERSION}}.zip` | Everything + `scripts/install.ps1` (auto-detects your installed years) | anywhere, then `pwsh scripts/install.ps1` |
+| `AutodeskMcp-All-v{{VERSION}}.zip` | Everything + `scripts/install.ps1` (auto-detects your installed years) | anywhere, then run `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` inside the extracted folder |
 | `AutodeskMcp-Server-win-x64-v{{VERSION}}.zip` | MCP server, self-contained (no .NET install needed) | anywhere; point your MCP client at `AutodeskMcp.Server.exe` |
+| `AutodeskMcp-Revit2022-v{{VERSION}}.zip` | Revit 2022 add-in (.NET Framework 4.8) | `%APPDATA%\Autodesk\Revit\Addins\2022\` |
+| `AutodeskMcp-Revit2023-v{{VERSION}}.zip` | Revit 2023 add-in (.NET Framework 4.8) | `%APPDATA%\Autodesk\Revit\Addins\2023\` |
+| `AutodeskMcp-Revit2024-v{{VERSION}}.zip` | Revit 2024 add-in (.NET Framework 4.8) | `%APPDATA%\Autodesk\Revit\Addins\2024\` |
 | `AutodeskMcp-Revit2025-v{{VERSION}}.zip` | Revit 2025 add-in (.NET 8) | `%APPDATA%\Autodesk\Revit\Addins\2025\` |
 | `AutodeskMcp-Revit2026-v{{VERSION}}.zip` | Revit 2026 add-in (.NET 8) | `%APPDATA%\Autodesk\Revit\Addins\2026\` |
 | `AutodeskMcp-Revit2027-v{{VERSION}}.zip` | Revit 2027 add-in (.NET 10) | `%APPDATA%\Autodesk\Revit\Addins\2027\` |
+| `AutodeskMcp-AutoCAD2022-v{{VERSION}}.zip` | AutoCAD 2022 bundle (R24.1, .NET Framework 4.8) | `%APPDATA%\Autodesk\ApplicationPlugins\` |
+| `AutodeskMcp-AutoCAD2023-v{{VERSION}}.zip` | AutoCAD 2023 bundle (R24.2, .NET Framework 4.8) | `%APPDATA%\Autodesk\ApplicationPlugins\` |
+| `AutodeskMcp-AutoCAD2024-v{{VERSION}}.zip` | AutoCAD 2024 bundle (R24.3, .NET Framework 4.8) | `%APPDATA%\Autodesk\ApplicationPlugins\` |
 | `AutodeskMcp-AutoCAD2025-v{{VERSION}}.zip` | AutoCAD 2025 bundle (R25.0, .NET 8) | `%APPDATA%\Autodesk\ApplicationPlugins\` |
 | `AutodeskMcp-AutoCAD2026-v{{VERSION}}.zip` | AutoCAD 2026 bundle (R25.1, .NET 8) | `%APPDATA%\Autodesk\ApplicationPlugins\` |
 | `AutodeskMcp-AutoCAD2027-v{{VERSION}}.zip` | AutoCAD 2027 bundle (R26.0, .NET 10) | `%APPDATA%\Autodesk\ApplicationPlugins\` |

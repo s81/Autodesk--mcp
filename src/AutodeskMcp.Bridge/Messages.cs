@@ -1,7 +1,11 @@
 using System;
+#if NETFRAMEWORK
+using AutodeskMcp.Bridge.Json;
+#else
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+#endif
 
 namespace AutodeskMcp.Bridge;
 
@@ -31,8 +35,20 @@ public sealed class BridgeException : Exception
     public BridgeException(string message, Exception inner) : base(message, inner) { }
 }
 
+/// <summary>
+/// The bridge's single entry point for (de)serializing its message classes. On .NET 8+ it uses System.Text.Json;
+/// on .NET Framework 4.8 (Revit/AutoCAD 2022-2024) the dependency-free MiniJson, with the same wire format:
+/// camelCase property names, nulls omitted.
+/// </summary>
 public static class BridgeJson
 {
+#if NETFRAMEWORK
+    public static string Serialize<T>(T value, bool indented = false) where T : class =>
+        MiniJsonSerializer.Serialize(value, indented);
+
+    public static T? Deserialize<T>(string json) where T : class, new() =>
+        MiniJsonSerializer.Deserialize<T>(json);
+#else
     public static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -42,4 +58,11 @@ public static class BridgeJson
     };
 
     public static readonly JsonSerializerOptions Indented = new(Options) { WriteIndented = true };
+
+    public static string Serialize<T>(T value, bool indented = false) where T : class =>
+        JsonSerializer.Serialize(value, indented ? Indented : Options);
+
+    public static T? Deserialize<T>(string json) where T : class, new() =>
+        JsonSerializer.Deserialize<T>(json, Options);
+#endif
 }

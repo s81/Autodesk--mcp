@@ -1,16 +1,22 @@
-# Autodesk MCP Bridge — Revit & AutoCAD 2025–2027
+# Autodesk MCP Bridge — Revit & AutoCAD 2022–2027
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets MCP clients (Claude Desktop,
 Claude Code, etc.) read and edit **live** Revit and AutoCAD sessions on the same Windows computer.
 
 | Product | Years | Add-in target | API reference package |
 |---|---|---|---|
+| Revit | 2022, 2023, 2024 | `net48` (.NET Framework 4.8) | `Nice3point.Revit.Api.*` 2022.1.80 / 2023.1.90 / 2024.3.60 |
 | Revit | 2025, 2026 | `net8.0-windows` | `Nice3point.Revit.Api.*` 2025.4.60 / 2026.4.10 |
 | Revit | 2027 | `net10.0-windows` | `Nice3point.Revit.Api.*` 2027.3.0 |
-| AutoCAD (+ verticals: Civil 3D, Plant 3D, Advance Steel…) | 2025 (R25.0), 2026 (R25.1) | `net8.0-windows` | `AutoCAD.NET` 25.0.1 / 25.1.0 (official) |
+| AutoCAD (+ verticals: Civil 3D, Plant 3D, Advance Steel…) | 2022 (R24.1), 2023 (R24.2), 2024 (R24.3) | `net48` (.NET Framework 4.8) | `AutoCAD.NET` 24.1.51000 / 24.2.0 / 24.3.0 (official) |
+| AutoCAD | 2025 (R25.0), 2026 (R25.1) | `net8.0-windows` | `AutoCAD.NET` 25.0.1 / 25.1.0 (official) |
 | AutoCAD | 2027 (R26.0) | `net10.0-windows` | `AutoCAD.NET` 26.0.0 (official) |
 
 AutoCAD LT is not supported because it has no .NET API.
+
+The 2022–2024 add-ins ship **no extra DLLs**: .NET Framework 4.8 has no built-in JSON support, so the bridge
+includes its own small JSON reader/writer (`AutodeskMcp.Bridge.Json`) instead of System.Text.Json, which would
+add about seven DLLs that can clash with other add-ins loaded in the same Revit/AutoCAD process.
 
 ## Architecture
 
@@ -30,11 +36,13 @@ AutoCAD LT is not supported because it has no .NET API.
   forwards tool calls to them, and returns JSON. It keeps running while you close and reopen Revit or
   AutoCAD.
 * **C# execution without Roslyn inside the host.** `*_execute_csharp` snippets are compiled *in the server
-  process* against the exact assemblies the host has loaded. Only the finished IL is sent to the add-in,
-  which loads it into a collectible `AssemblyLoadContext`. Because Roslyn never loads inside Revit or
-  AutoCAD, it can't conflict with versions shipped by the host or other add-ins.
-* **Shared `AutodeskMcp.Bridge` library** (net8.0, no dependencies): pipe framing, discovery, policy,
-  main-thread work items, safe JSON conversion.
+  process* against the exact assemblies the host has loaded. Only the finished IL is sent to the add-in.
+  Because Roslyn never loads inside Revit or AutoCAD, it can't conflict with versions shipped by the host or
+  other add-ins. On 2025–2027 the script is loaded into a collectible `AssemblyLoadContext` and unloaded
+  afterwards. .NET Framework 4.8 (2022–2024) cannot unload assemblies, so there each executed script stays in
+  memory (a few KB) until Revit/AutoCAD is closed.
+* **Shared `AutodeskMcp.Bridge` library** (net48 + net8.0, no dependencies): pipe framing, discovery,
+  policy, main-thread work items, safe JSON conversion.
 
 ## Tools
 
@@ -68,11 +76,11 @@ writes are refused while a user command is running.
 
 ## Build
 
-You need the **.NET 10 SDK**; it builds both the net8 and net10 targets. You don't need Revit or AutoCAD
-installed to build.
+You need the **.NET 10 SDK**; it builds every target (net48, net8.0, net10.0). You don't need Revit or
+AutoCAD installed to build.
 
-```bash
-pwsh scripts/build.ps1
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 ```
 
 On Linux, macOS or CI, `scripts/build.sh` does the same and also writes per-version zips to `dist/`:
@@ -98,8 +106,9 @@ dotnet test --project tests/AutodeskMcp.Tests
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request and on every push to `main`:
-* tests on Linux and Windows;
-* builds all six add-ins (Revit and AutoCAD × 2025, 2026, 2027) with warnings treated as errors;
+* tests on Linux and Windows; on Windows they also run on .NET Framework 4.8, and a separate .NET Framework
+  4.8 process plays the 2022–2024 add-in against the real .NET 10 client and MCP server;
+* builds all twelve add-ins (Revit and AutoCAD × 2022–2027) with warnings treated as errors;
 * checks that the self-contained Windows server still publishes.
 
 To block merging when CI fails, make the single **CI result** check required (Settings → Branches →
@@ -126,13 +135,19 @@ git push origin v0.1.0
 
 ## Install (Windows, per user, no admin rights)
 
-```powershell
-pwsh scripts/install.ps1            # auto-detects installed Revit/AutoCAD years
-```
+1. Download `AutodeskMcp-All-v<version>.zip` from the latest release and **extract the whole zip** to a
+   folder (don't run anything from inside the zip).
+2. Open **Windows PowerShell** in the extracted folder and run the installer. It detects your installed
+   Revit/AutoCAD years. `-ExecutionPolicy Bypass` is needed because Windows blocks downloaded scripts by
+   default; it applies to this one command only.
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+   ```
+3. Register the server with Claude (below), then **fully quit Claude** (taskbar tray icon → Quit) and
+   restart Revit/AutoCAD. If Claude still doesn't show the server, restart the PC.
 
-Then register the server with your MCP client and restart Revit/AutoCAD.
-
-Claude Desktop (`%APPDATA%\Claude\claude_desktop_config.json`):
+Claude Desktop: Settings → Developer → **Edit Config** opens `claude_desktop_config.json`. Add (keep the
+double backslashes):
 
 ```json
 {
@@ -148,15 +163,24 @@ Claude Code:
 claude mcp add autodesk -- "C:\Users\<you>\AppData\Local\AutodeskMcp\server\AutodeskMcp.Server.exe"
 ```
 
+### Use it in Claude
+
+Only the **Claude Desktop app** (or Claude Code) on the same PC can start the server; the claude.ai website
+and mobile apps cannot. There is nothing to launch by hand: open Revit or AutoCAD with a project/drawing,
+then ask Claude in plain words, for example *"List my running Autodesk instances"* or *"How many walls are
+in the active Revit model?"*, and click **Allow** when Claude asks to use the tool. If Claude answers
+*"No running revit instance … was found"*, Claude works but the add-in did not load: check
+`%LOCALAPPDATA%\AutodeskMcp\logs\`.
+
 Where files go:
 * Revit: `%APPDATA%\Autodesk\Revit\Addins\<year>\AutodeskMcp.addin` + `AutodeskMcp\`. Revit 2027 no
   longer reads `C:\ProgramData\Autodesk\Revit\Addins`. Per-user folders still work.
-* AutoCAD: `%APPDATA%\Autodesk\ApplicationPlugins\AutodeskMcp.bundle`. One bundle serves 2025, 2026 and
-  2027. If SECURELOAD shows a warning, add the bundle folder to `TRUSTEDPATHS` or choose *Always load*.
+* AutoCAD: `%APPDATA%\Autodesk\ApplicationPlugins\AutodeskMcp.bundle`. One bundle serves 2022–2027. If SECURELOAD shows a warning, add the bundle folder to `TRUSTEDPATHS` or choose *Always load*.
 
 ## Security and policy
 
-* The pipe is created with `PipeOptions.CurrentUserOnly`, so other Windows users can't connect. Each
+* The pipe only accepts the current Windows user (`PipeOptions.CurrentUserOnly` on 2025–2027; an access
+  list granting only the current user, who is also the pipe's owner, on 2022–2024). Each
   request must also carry a random 256-bit token. The token is stored only in your profile's discovery
   file.
 * Nothing listens on the network.
@@ -174,15 +198,17 @@ Where files go:
 
 ## Status: what has and hasn't been verified
 
-Verified in CI-like conditions (Linux, .NET 10 SDK):
-* All 6 add-in variants compile with 0 warnings against the official/reference API assemblies, and so
-  does the server.
-* 14 automated tests pass. They cover pipe transport, token authentication, policy enforcement,
-  timeout-cancellation, stale-instance pruning, out-of-process compilation and loading of scripts
-  (including error line mapping), and an end-to-end MCP stdio session (`initialize` → `tools/list` →
-  `tools/call` proxied to a fake host).
+Verified automatically on every pull request (GitHub Actions, Linux and Windows):
+* All 12 add-in variants (Revit/AutoCAD × 2022–2027) compile with warnings treated as errors against the
+  official/reference API assemblies, and the server publishes.
+* The tests cover pipe transport, token authentication, policy enforcement, timeout-cancellation,
+  stale-instance pruning, out-of-process compilation and loading of scripts (including error line mapping),
+  the built-in JSON (including 500 random documents checked against System.Text.Json), and end-to-end MCP
+  stdio sessions. On Windows they also run on .NET Framework 4.8, and a separate .NET Framework 4.8 host
+  process is driven by the real .NET 10 client and MCP server, including a C# script compiled against that
+  host's assemblies.
 
-**Not yet verified:** running inside actual Revit or AutoCAD. The host-specific handlers
+**Not verified automatically:** running inside actual Revit or AutoCAD (2022–2024 are new in 0.2.0). The host-specific handlers
 (`RevitCommands`, `AcadCommands`) compile against the real APIs but have not been exercised in a live
 session. Before production use, test each year you deploy, at minimum:
 1. The app starts and a file appears in `%LOCALAPPDATA%\AutodeskMcp\instances`.

@@ -70,7 +70,7 @@ public sealed class BridgeApplication : IExternalApplication
         {
             string dir = Path.Combine(InstanceRegistry.RootDirectory, "logs");
             Directory.CreateDirectory(dir);
-            File.AppendAllText(Path.Combine(dir, $"revit-{Environment.ProcessId}.log"),
+            File.AppendAllText(Path.Combine(dir, $"revit-{Compat.CurrentProcessId}.log"),
                 $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
         }
         catch { /* logging must never throw */ }
