@@ -6,9 +6,9 @@
 
 # Autodesk MCP User Manual
 
-Last updated: 2026-11-06 (version 0.3.0)
+Last updated: 2026-11-06 (version 0.3.1)
 
-Autodesk MCP lets Claude read and edit the Revit or AutoCAD model you have open, on your own Windows PC, from plain-language requests. This manual covers version 0.3.0: Part 1 is for everyday users, Part 2 for IT staff who install it. An Arabic version follows [below](#arabic).
+Autodesk MCP lets Claude read and edit the Revit or AutoCAD model you have open, on your own Windows PC, from plain-language requests. This manual covers version 0.3.1: Part 1 is for everyday users, Part 2 for IT staff who install it. An Arabic version follows [below](#arabic).
 
 ## Part 1 — For everyday users
 
@@ -98,14 +98,14 @@ Still stuck? Send IT the time it happened, Claude's exact message, and the newes
 | 2023 | .NET Framework 4.8 | R24.2 | .NET Framework 4.8 |
 | 2022 | .NET Framework 4.8 | R24.1 | .NET Framework 4.8 |
 
-Download from the [latest release](https://github.com/s81/Autodesk--mcp/releases/latest): **AutodeskMcp-v0.3.0.mcpb** (Claude Desktop extension, easiest) or **AutodeskMcp-All-v0.3.0.zip** (installer script). Checksums are in `SHA256SUMS.txt`.
+Download from the [latest release](https://github.com/s81/Autodesk--mcp/releases/latest): **AutodeskMcp-v0.3.1.mcpb** (Claude Desktop extension, easiest) or **AutodeskMcp-All-v0.3.1.zip** (installer script). Checksums are in `SHA256SUMS.txt`.
 
 ### Install, connect Claude, update and remove
 
 **Easiest: the Claude Desktop extension (.mcpb).** It installs the MCP server and the add-ins in one step, with no zip, PowerShell or config editing.
 
 1. Close Revit and AutoCAD.
-2. Download **AutodeskMcp-v0.3.0.mcpb**.
+2. Download **AutodeskMcp-v0.3.1.mcpb**.
 3. In Claude Desktop open **Settings → Desktop app → Manage** (next to Extensions; **Settings → Extensions** in older versions) → **Advanced settings** → **Install Extension…**, choose the file and follow the prompts. The extension is not code-signed yet, so Claude may warn about that.
 4. In the extension's settings choose whether to allow changes and C# scripts, and the busy timeout. These are written to `config.json` (below).
 5. Start Revit/AutoCAD. Each time Claude starts the extension, it copies the add-ins for every year installed under `C:\Program Files\Autodesk`, copying only changed files. Ask Claude *"List my running Autodesk instances."*: `addinSetup` shows what was installed and any `problems` (for example, a DLL in use because Revit was open: close it and restart Claude).
@@ -198,7 +198,7 @@ Source code, issues and releases: [github.com/s81/Autodesk--mcp](https://github.
 
 # دليل استخدام Autodesk MCP
 
-يتيح Autodesk MCP لـ Claude أن يقرأ ويعدّل نموذج Revit أو رسم AutoCAD المفتوح على جهازك، بطلبات بلغة عادية. يغطي هذا الدليل الإصدار 0.3.0: الجزء الأول للمستخدمين يوميًا، والجزء الثاني لفريق تقنية المعلومات الذي يقوم بالتثبيت. أسماء القوائم والأوامر مكتوبة بالإنجليزية كما تظهر في البرامج.
+يتيح Autodesk MCP لـ Claude أن يقرأ ويعدّل نموذج Revit أو رسم AutoCAD المفتوح على جهازك، بطلبات بلغة عادية. يغطي هذا الدليل الإصدار 0.3.1: الجزء الأول للمستخدمين يوميًا، والجزء الثاني لفريق تقنية المعلومات الذي يقوم بالتثبيت. أسماء القوائم والأوامر مكتوبة بالإنجليزية كما تظهر في البرامج.
 
 ## الجزء الأول — للمستخدمين
 
@@ -288,14 +288,14 @@ Source code, issues and releases: [github.com/s81/Autodesk--mcp](https://github.
 | 2023 | .NET Framework 4.8 | R24.2 | .NET Framework 4.8 |
 | 2022 | .NET Framework 4.8 | R24.1 | .NET Framework 4.8 |
 
-التنزيل من [أحدث إصدار](https://github.com/s81/Autodesk--mcp/releases/latest): **AutodeskMcp-v0.3.0.mcpb** (إضافة Claude Desktop، الأسهل) أو **AutodeskMcp-All-v0.3.0.zip** (سكربت التثبيت). الـ Checksums موجودة في `SHA256SUMS.txt`.
+التنزيل من [أحدث إصدار](https://github.com/s81/Autodesk--mcp/releases/latest): **AutodeskMcp-v0.3.1.mcpb** (إضافة Claude Desktop، الأسهل) أو **AutodeskMcp-All-v0.3.1.zip** (سكربت التثبيت). الـ Checksums موجودة في `SHA256SUMS.txt`.
 
 ### التثبيت والربط بـ Claude والتحديث والإزالة
 
 **الأسهل: إضافة Claude Desktop بصيغة .mcpb.** تثبّت خادم MCP والإضافات في خطوة واحدة، دون zip أو PowerShell أو تعديل ملف الإعداد.
 
 1. أغلق Revit وAutoCAD.
-2. نزّل **AutodeskMcp-v0.3.0.mcpb**.
+2. نزّل **AutodeskMcp-v0.3.1.mcpb**.
 3. في Claude Desktop افتح **Settings ← Desktop app ← Manage** (بجانب Extensions؛ أو **Settings ← Extensions** في الإصدارات الأقدم) ← **Advanced settings** ← **Install Extension…**، واختر الملف واتبع الخطوات. الإضافة غير موقّعة رقميًا بعد، لذا قد يظهر تحذير.
 4. في إعدادات الإضافة اختر السماح بالتعديلات وبسكربتات C# ومدة الانتظار. تُكتب هذه القيم في `config.json` (أدناه).
 5. شغّل Revit/AutoCAD. في كل مرة يشغّل فيها Claude الإضافة، تنسخ الإضافات لكل سنة مثبّتة في `C:\Program Files\Autodesk`، وتنسخ الملفات المتغيرة فقط. اطلب من Claude *"List my running Autodesk instances."*: يُظهر `addinSetup` ما تم تثبيته وأي `problems` (مثل ملف DLL مستخدم لأن Revit كان مفتوحًا: أغلقه وأعد تشغيل Claude).
